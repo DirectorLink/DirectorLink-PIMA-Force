@@ -12,7 +12,7 @@ DirectorLink is an independent project, not affiliated with Control4, Snap One o
 
 **Download:** [releases](../../releases) · **Help and updates:** [directorlink.io/drivers/pima-force](https://directorlink.io/drivers/pima-force)
 
-> **Beta.** Receive-only mode is tested on a FORCE 32C (firmware 1.5.1): arming, disarming and the partition's state reach Control4. The JSON interface (arming and disarming from Control4, zones, bypass) is built from PIMA's specification and tested against a simulated panel, but has not run against a real panel yet. Reports are welcome: see [Support](#support).
+> **Tested on a FORCE 32C** (firmware 1.5.1) in receive-only mode: arming, disarming and the partition's state reach Control4. The JSON interface (arming and disarming from Control4, zones, bypass) follows PIMA's specification and is tested against a simulated panel; reports from panels with JSON firmware are welcome: see [Support](#support).
 
 ## What you get
 
