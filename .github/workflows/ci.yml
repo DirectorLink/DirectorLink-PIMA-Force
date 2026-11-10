@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Lua 5.1
+        run: sudo apt-get update && sudo apt-get install -y lua5.1
+      - name: JSON protocol
+        run: lua5.1 tests/test_force_protocol.lua
+      - name: The driver against a simulated panel
+        run: lua5.1 tests/test_driver.lua
+      - name: Receive-only mode (SIA DC-09)
+        run: lua5.1 tests/test_sia.lua
+      - name: Build
+        run: python tools/build.py --no-tests
+      - name: The packaged script against a simulated panel
+        run: DRIVER_LUA=dist/driver.lua lua5.1 tests/test_driver.lua && DRIVER_LUA=dist/driver.lua lua5.1 tests/test_sia.lua
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DirectorLink-PIMA-Force
+          path: |
+            dist/DirectorLink-PIMA-Force.c4z
+            dist/SHA256SUMS.txt

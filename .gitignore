@@ -1,0 +1,6 @@
+# build output (attach the .c4z to a release instead of committing it)
+dist/
+__pycache__/
+*.pyc
+# tools/force_probe.py writes the panel's raw traffic here
+force_capture.log

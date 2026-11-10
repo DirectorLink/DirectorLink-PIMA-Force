@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>DirectorLink · PIMA FORCE</title>
+<style>
+	body { font-family: Segoe UI, Arial, sans-serif; font-size: 13px; line-height: 1.45; color: #222; margin: 16px; max-width: 900px; }
+	h1 { font-size: 20px; margin-bottom: 4px; }
+	h2 { font-size: 16px; margin-top: 22px; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
+	table { border-collapse: collapse; margin: 6px 0; }
+	td, th { border: 1px solid #ccc; padding: 4px 8px; vertical-align: top; text-align: left; }
+	th { background: #f2f2f2; }
+	code { background: #f4f4f4; padding: 0 3px; }
+	.note { background: #fff6d6; border: 1px solid #e6c84c; padding: 8px; }
+</style>
+</head>
+<body>
+<h1>DirectorLink · PIMA FORCE</h1>
+<p>Free, open-source Control4 driver for PIMA FORCE alarm panels (FORCE, FORCE 32C, FORCE 16) using the
+panel's local <b>JSON interface</b>. No cloud and no extra hardware: the panel connects over the LAN to this
+driver, the same way it connects to a monitoring station. Part of DirectorLink Drivers:
+<b>directorlink.io/drivers/pima-force</b> (help, updates and the source).</p>
+
+<p class="note"><b>Panel firmware.</b> The JSON interface is not in every FORCE firmware. Panels on older
+firmware (for example 1.5.x) must be upgraded first: <i>Master code &rarr; Communication &rarr; Remote Service
+&rarr; Upgrade/Update &rarr; Firmware: Latest version &rarr; Over Network</i>, or ask your installer / PIMA
+support for firmware with the Smart Home (JSON) interface. After the upgrade, a CMS network path offers
+<b>Protocol = JSON</b> and Users &amp; Codes shows a <b>Smart Home code</b>.</p>
+
+<h2>1. Panel setup (installer code)</h2>
+<p><i>Installer code &rarr; System Programming &rarr; CMS &amp; Communication &rarr; Monitoring Stations &rarr;
+CMS 2 (or 3) &rarr; Comm. Paths &rarr; Network (Ethernet)</i>. Never reuse a CMS that reports to a monitoring company.</p>
+<table>
+<tr><th>Setting</th><th>Value</th></tr>
+<tr><td>IP / URL 1</td><td>The Control4 controller's IP address (give the controller a fixed IP)</td></tr>
+<tr><td>Port 1</td><td>Same as the driver's <b>Listen Port</b> (default 7780)</td></tr>
+<tr><td>Account ID</td><td>Any number. The driver learns it from the first report.</td></tr>
+<tr><td>Protocol</td><td><b>JSON</b></td></tr>
+<tr><td>Encryption</td><td><b>Off</b></td></tr>
+<tr><td>Life signal</td><td>Enabled (a few minutes)</td></tr>
+<tr><td>Event reporting &rarr; Zone/Output Toggle</td><td><b>On</b> (needed for live zone open/close)</td></tr>
+</table>
+<p>In the user menu enable <b>Remote Disarm</b>, otherwise the panel refuses disarm commands from Control4.</p>
+
+<h2>2. Control4 setup</h2>
+<table>
+<tr><th>Property</th><th>Purpose</th></tr>
+<tr><td>Listen Port</td><td>TCP port the driver listens on for the panel (default 7780).</td></tr>
+<tr><td>Account ID</td><td>Leave empty: the driver takes the account from the panel's first report and fills it in. After that, any other account is refused. Edit or clear it to switch to a different panel.</td></tr>
+<tr><td>Panel IP Address</td><td>Optional. When set, connections from any other address are refused.</td></tr>
+<tr><td>Panel User Code</td><td>Master or Smart Home code. Used to read zones and status, for programming
+(arm/disarm from Composer), for arming from Navigator when no code is required, and for bypass. The installer
+code does not work here.</td></tr>
+<tr><td>Require Code To Arm</td><td>Yes: Navigator asks for a code to arm, and that code is sent to the panel.</td></tr>
+<tr><td>Partitions In Use / Partition N Zones</td><td>FORCE 32C supports 4 partitions. List each partition's zones,
+for example <code>1-8,12</code>, or <code>all</code>.</td></tr>
+<tr><td>Zone Count</td><td>0 = read from the panel (recommended). Zone bindings are created automatically.</td></tr>
+<tr><td>Reverse Zone Names</td><td>Yes if Hebrew zone names appear backwards.</td></tr>
+<tr><td>Allow Zone Bypass</td><td>Allows bypass from Navigator (arm with open zones) and from programming.</td></tr>
+<tr><td>Status Poll Interval (s)</td><td>Safety re-read of the panel status (default 60). Events are live regardless.</td></tr>
+<tr><td>Link Timeout (s)</td><td>No data from the panel for this long = connection lost (default 300).</td></tr>
+<tr><td>Debug Mode</td><td>On / Trace print to the Lua tab and the controller log. Switches off after 4 hours. Codes are never logged.</td></tr>
+</table>
+<p>Zones appear in the Security Panel's zone list with the names stored in the panel. Rename them or set
+their type (door, motion, smoke...) in the panel proxy's Zones page. Each zone also has a <b>Zone N</b>
+contact connection: bind a Control4 contact driver (Door Contact, Motion Sensor...) to it to use the zone in rooms
+and programming.</p>
+
+<h2>3. How it behaves</h2>
+<ul>
+<li><b>Arm</b> (Away = Full arm, Home = Home 1, Night = Home 2). After the panel accepts, Navigator shows the exit
+delay countdown, then the driver reads the panel to confirm the arm. If zones are open the panel refuses and
+Navigator offers to bypass them.</li>
+<li><b>Disarm</b> from Navigator always needs a code. The code is sent to the panel, which checks it. Programming
+disarms with the Panel User Code.</li>
+<li><b>Alarms</b> (burglary, fire, panic, medical, duress) put the partition in Alarm until it is disarmed.</li>
+<li><b>Troubles</b> come from the panel's fault list (AC loss, low battery, tamper, communication...) and appear
+on the Security Panel. Losing the connection adds a <i>Communication with panel lost</i> trouble.</li>
+<li><b>Events</b> for programming: Communication Lost / Restored, Siren Active / Inactive, Access Denied, plus the
+standard partition events (Armed, Disarmed, Alarm...).</li>
+<li><b>Commands</b> for programming: Bypass Zone, Unbypass Zone, Activate Output, Deactivate Output (controlled outputs 1-8).</li>
+<li>Panic / fire / medical buttons are not offered: the PIMA protocol cannot trigger them.</li>
+</ul>
+
+<h2>3a. Receive-only mode (firmware without JSON)</h2>
+<p>If the panel's CMS path offers no JSON protocol, leave it on its normal alarm-report protocol
+(SIA DC-09, Contact-ID or SIA codes, encryption <b>off</b>). The driver detects it, acknowledges every
+report and switches to receive-only mode. Connection Status then reads
+<i>Receive only (SIA DC-09): last report ...</i>.</p>
+<ul>
+<li><b>Shown:</b> armed (Away / Home) and disarmed, alarms, troubles, siren, and zone open/close when the panel reports it.</li>
+<li><b>Not possible:</b> arming, disarming, bypass and outputs from Control4; zone names (rename zones in Composer).</li>
+<li>The partition state is unknown until the panel sends its first arm or disarm report. Arm and disarm once at the keypad after installing.</li>
+<li>Zones are added as the panel reports them. Set <b>Zone Count</b> to create them all at once.</li>
+<li>Turn on the CMS path's life signal: the driver learns its interval and adds a communication trouble when it stops.</li>
+<li>When JSON firmware is installed later, set the CMS path to JSON: the driver switches to full control by itself.</li>
+</ul>
+
+<h2>3b. DirectorLink</h2>
+<p>The partitions are Control4's standard security partitions, so any Control4 app shows them. In
+<b>DirectorLink</b> (with its <i>Alarm Status</i> property On) the DirectorLink app shows each partition's
+state on Home. From DirectorLink 1.15.0, with its <i>Alarm Control</i> property On, people you allow can also
+arm and disarm from the app: they type their alarm code each time, it goes to the panel as typed and the panel
+checks it. This driver never arms or disarms for DirectorLink with the Panel User Code.</p>
+<p>The driver tells DirectorLink when arming and disarming can work, in the variable
+<code>DIRECTORLINK_ALARM_CONTROL</code>: <code>1</code> with the JSON interface connected, <code>0</code> in
+receive-only mode or without a panel connection (DirectorLink then shows the state only).
+<code>DIRECTORLINK_ALARM</code> = <code>1</code> says the driver follows DirectorLink's alarm agreement.
+DirectorLink is not required: without it the driver works the same.</p>
+
+<h2>4. Troubleshooting (Connection Status)</h2>
+<table>
+<tr><th>Status</th><th>What to check</th></tr>
+<tr><td>Waiting for the panel to connect on port N</td><td>Panel CMS path IP/port, controller firewall/VLAN, panel network cable. The panel may take a few minutes to dial.</td></tr>
+<tr><td>Panel connected with account X: enter it in 'Account ID'</td><td>Enter X in Account ID.</td></tr>
+<tr><td>Account mismatch</td><td>Account ID differs from the panel's CMS account.</td></tr>
+<tr><td>Panel is sending Contact-ID/SIA, not JSON</td><td>Set Protocol = JSON on the CMS path. If JSON is not offered, the panel firmware must be upgraded.</td></tr>
+<tr><td>Receive only (SIA DC-09)</td><td>Working without JSON: status and alarms only (section 3a).</td></tr>
+<tr><td>Panel reports are encrypted</td><td>Turn encryption off on the CMS path.</td></tr>
+<tr><td>Unreadable data from the panel</td><td>Turn encryption off on the CMS path.</td></tr>
+<tr><td>Connected - set 'Panel User Code'</td><td>Enter the master / Smart Home code to read zones and status.</td></tr>
+<tr><td>Last Panel Error: Wrong User Code</td><td>The code sent was refused by the panel.</td></tr>
+</table>
+<p>Use the <b>Print Status</b> action and the Lua tab for a full dump of what the driver knows.</p>
+<hr>
+<p style="color:#666">DirectorLink · PIMA FORCE. Copyright 2026 DirectorLink. Licensed under the Apache License 2.0
+(LICENSE.txt and NOTICE.txt in this package). DirectorLink is an independent project, not affiliated with or
+endorsed by Control4, Snap One or PIMA Electronic Systems. Product names are trademarks of their owners.</p>
+</body>
+</html>

@@ -1,0 +1,469 @@
+<devicedata>
+	<copyright>Copyright 2026 DirectorLink</copyright>
+	<creator>DirectorLink</creator>
+	<manufacturer>PIMA</manufacturer>
+	<name>DirectorLink · PIMA FORCE</name>
+	<model>FORCE, FORCE 32C, FORCE 16</model>
+	<created>10/03/2026 12:00</created>
+	<!-- tools/build.py stamps modified and version from the VERSION file -->
+	<modified>10/03/2026 12:00</modified>
+	<version>0</version>
+	<control>lua_gen</control>
+	<controlmethod>ip</controlmethod>
+	<driver>DriverWorks</driver>
+	<minimum_os_version>3.0.0</minimum_os_version>
+	<composer_categories>
+		<category>Security</category>
+	</composer_categories>
+	<!-- Never change or remove proxies, connection ids, event ids or property names in later
+	     versions: Control4 projects that already use the driver depend on them. The variables
+	     DIRECTORLINK_ALARM and DIRECTORLINK_ALARM_CONTROL (added at run time) are DirectorLink's
+	     alarm agreement. -->
+	<proxies qty="5">
+		<proxy proxybindingid="5001" name="PIMA Panel">securitypanel</proxy>
+		<proxy proxybindingid="5002" name="PIMA Partition 1">security</proxy>
+		<proxy proxybindingid="5003" name="PIMA Partition 2">security</proxy>
+		<proxy proxybindingid="5004" name="PIMA Partition 3">security</proxy>
+		<proxy proxybindingid="5005" name="PIMA Partition 4">security</proxy>
+	</proxies>
+	<capabilities>
+		<!-- securitypanel proxy -->
+		<can_set_time>false</can_set_time>
+		<can_activate_partitions>false</can_activate_partitions>
+		<!-- security (partition) proxies. Arm states map to PIMA: Away = Full arm, Home = Home 1, Night = Home 2 -->
+		<ui_version>2</ui_version>
+		<arm_states>Away,Home,Night</arm_states>
+		<supports_virtual_keypad>false</supports_virtual_keypad>
+		<has_fire>false</has_fire>
+		<has_medical>false</has_medical>
+		<has_police>false</has_police>
+		<has_panic>false</has_panic>
+		<functions></functions>
+	</capabilities>
+	<connections>
+		<connection>
+			<id>5001</id>
+			<facing>6</facing>
+			<connectionname>Security Panel</connectionname>
+			<type>2</type>
+			<consumer>False</consumer>
+			<audiosource>False</audiosource>
+			<videosource>False</videosource>
+			<linelevel>False</linelevel>
+			<classes>
+				<class>
+					<classname>SECURITY_PANEL</classname>
+				</class>
+			</classes>
+		</connection>
+		<connection>
+			<id>5002</id>
+			<facing>6</facing>
+			<connectionname>Partition 1</connectionname>
+			<type>2</type>
+			<consumer>False</consumer>
+			<audiosource>False</audiosource>
+			<videosource>False</videosource>
+			<linelevel>False</linelevel>
+			<classes>
+				<class>
+					<classname>SECURITY</classname>
+				</class>
+			</classes>
+			<hidden>True</hidden>
+		</connection>
+		<connection proxybindingid="5002">
+			<id>7002</id>
+			<facing>6</facing>
+			<connectionname>Room Selection Partition 1</connectionname>
+			<type>7</type>
+			<consumer>False</consumer>
+			<audiosource>False</audiosource>
+			<videosource>False</videosource>
+			<linelevel>False</linelevel>
+			<classes>
+				<class>
+					<autobind>True</autobind>
+					<classname>SECURITY_SYSTEM</classname>
+				</class>
+			</classes>
+		</connection>
+		<connection>
+			<id>5003</id>
+			<facing>6</facing>
+			<connectionname>Partition 2</connectionname>
+			<type>2</type>
+			<consumer>False</consumer>
+			<audiosource>False</audiosource>
+			<videosource>False</videosource>
+			<linelevel>False</linelevel>
+			<classes>
+				<class>
+					<classname>SECURITY</classname>
+				</class>
+			</classes>
+			<hidden>True</hidden>
+		</connection>
+		<connection proxybindingid="5003">
+			<id>7003</id>
+			<facing>6</facing>
+			<connectionname>Room Selection Partition 2</connectionname>
+			<type>7</type>
+			<consumer>False</consumer>
+			<audiosource>False</audiosource>
+			<videosource>False</videosource>
+			<linelevel>False</linelevel>
+			<classes>
+				<class>
+					<autobind>True</autobind>
+					<classname>SECURITY_SYSTEM</classname>
+				</class>
+			</classes>
+		</connection>
+		<connection>
+			<id>5004</id>
+			<facing>6</facing>
+			<connectionname>Partition 3</connectionname>
+			<type>2</type>
+			<consumer>False</consumer>
+			<audiosource>False</audiosource>
+			<videosource>False</videosource>
+			<linelevel>False</linelevel>
+			<classes>
+				<class>
+					<classname>SECURITY</classname>
+				</class>
+			</classes>
+			<hidden>True</hidden>
+		</connection>
+		<connection proxybindingid="5004">
+			<id>7004</id>
+			<facing>6</facing>
+			<connectionname>Room Selection Partition 3</connectionname>
+			<type>7</type>
+			<consumer>False</consumer>
+			<audiosource>False</audiosource>
+			<videosource>False</videosource>
+			<linelevel>False</linelevel>
+			<classes>
+				<class>
+					<autobind>True</autobind>
+					<classname>SECURITY_SYSTEM</classname>
+				</class>
+			</classes>
+		</connection>
+		<connection>
+			<id>5005</id>
+			<facing>6</facing>
+			<connectionname>Partition 4</connectionname>
+			<type>2</type>
+			<consumer>False</consumer>
+			<audiosource>False</audiosource>
+			<videosource>False</videosource>
+			<linelevel>False</linelevel>
+			<classes>
+				<class>
+					<classname>SECURITY</classname>
+				</class>
+			</classes>
+			<hidden>True</hidden>
+		</connection>
+		<connection proxybindingid="5005">
+			<id>7005</id>
+			<facing>6</facing>
+			<connectionname>Room Selection Partition 4</connectionname>
+			<type>7</type>
+			<consumer>False</consumer>
+			<audiosource>False</audiosource>
+			<videosource>False</videosource>
+			<linelevel>False</linelevel>
+			<classes>
+				<class>
+					<autobind>True</autobind>
+					<classname>SECURITY_SYSTEM</classname>
+				</class>
+			</classes>
+		</connection>
+	</connections>
+	<events>
+		<event>
+			<id>1</id>
+			<name>Communication Lost</name>
+			<description>NAME lost communication with the PIMA panel</description>
+		</event>
+		<event>
+			<id>2</id>
+			<name>Communication Restored</name>
+			<description>NAME restored communication with the PIMA panel</description>
+		</event>
+		<event>
+			<id>3</id>
+			<name>Siren Active</name>
+			<description>A siren output of NAME turned on</description>
+		</event>
+		<event>
+			<id>4</id>
+			<name>Siren Inactive</name>
+			<description>All siren outputs of NAME turned off</description>
+		</event>
+		<event>
+			<id>5</id>
+			<name>Access Denied</name>
+			<description>NAME reported an invalid code or an attempt outside the allowed time</description>
+		</event>
+	</events>
+	<config>
+		<script file="driver.lua" jit="1"/>
+		<documentation file="www/documentation.html">DirectorLink · PIMA FORCE: free, open-source driver for PIMA FORCE alarm panels, on the panel's local JSON interface (or receive only, SIA DC-09). The panel connects to this driver: point a CMS path (CMS 2 or 3, Network, Protocol JSON) at the controller's IP and the Listen Port. See the Documentation tab in Composer Pro. DirectorLink is an independent project, not affiliated with Control4, Snap One or PIMA.</documentation>
+		<properties>
+			<property>
+				<name>Driver Version</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>true</readonly>
+			</property>
+			<property>
+				<name>Connection Status</name>
+				<type>STRING</type>
+				<default>Not connected</default>
+				<readonly>true</readonly>
+			</property>
+			<property>
+				<name>Panel Info</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>true</readonly>
+			</property>
+			<property>
+				<name>Listen Port</name>
+				<type>RANGED_INTEGER</type>
+				<minimum>1024</minimum>
+				<maximum>65535</maximum>
+				<default>7780</default>
+				<readonly>false</readonly>
+			</property>
+			<property>
+				<name>Account ID</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>false</readonly>
+			</property>
+			<property>
+				<name>Panel IP Address</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>false</readonly>
+			</property>
+			<property>
+				<name>Panel User Code</name>
+				<type>STRING</type>
+				<password>true</password>
+				<default></default>
+				<readonly>false</readonly>
+			</property>
+			<property>
+				<name>Require Code To Arm</name>
+				<type>LIST</type>
+				<items>
+					<item>No</item>
+					<item>Yes</item>
+				</items>
+				<default>No</default>
+				<readonly>false</readonly>
+			</property>
+			<property>
+				<name>Partitions In Use</name>
+				<type>RANGED_INTEGER</type>
+				<minimum>1</minimum>
+				<maximum>4</maximum>
+				<default>1</default>
+				<readonly>false</readonly>
+			</property>
+			<property>
+				<name>Partition 1 Zones</name>
+				<type>STRING</type>
+				<default>all</default>
+				<readonly>false</readonly>
+			</property>
+			<property>
+				<name>Partition 2 Zones</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>false</readonly>
+			</property>
+			<property>
+				<name>Partition 3 Zones</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>false</readonly>
+			</property>
+			<property>
+				<name>Partition 4 Zones</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>false</readonly>
+			</property>
+			<property>
+				<name>Zone Count</name>
+				<type>RANGED_INTEGER</type>
+				<minimum>0</minimum>
+				<maximum>144</maximum>
+				<default>0</default>
+				<readonly>false</readonly>
+			</property>
+			<property>
+				<name>Reverse Zone Names</name>
+				<type>LIST</type>
+				<items>
+					<item>No</item>
+					<item>Yes</item>
+				</items>
+				<default>No</default>
+				<readonly>false</readonly>
+			</property>
+			<property>
+				<name>Allow Zone Bypass</name>
+				<type>LIST</type>
+				<items>
+					<item>Yes</item>
+					<item>No</item>
+				</items>
+				<default>Yes</default>
+				<readonly>false</readonly>
+			</property>
+			<property>
+				<name>Status Poll Interval (s)</name>
+				<type>RANGED_INTEGER</type>
+				<minimum>0</minimum>
+				<maximum>3600</maximum>
+				<default>60</default>
+				<readonly>false</readonly>
+			</property>
+			<property>
+				<name>Link Timeout (s)</name>
+				<type>RANGED_INTEGER</type>
+				<minimum>0</minimum>
+				<maximum>3600</maximum>
+				<default>300</default>
+				<readonly>false</readonly>
+			</property>
+			<property>
+				<name>Open Zones</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>true</readonly>
+			</property>
+			<property>
+				<name>Bypassed Zones</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>true</readonly>
+			</property>
+			<property>
+				<name>Alarmed Zones</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>true</readonly>
+			</property>
+			<property>
+				<name>Active Troubles</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>true</readonly>
+			</property>
+			<property>
+				<name>Sirens</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>true</readonly>
+			</property>
+			<property>
+				<name>Last Event</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>true</readonly>
+			</property>
+			<property>
+				<name>Last Panel Error</name>
+				<type>STRING</type>
+				<default></default>
+				<readonly>true</readonly>
+			</property>
+			<property>
+				<name>Debug Mode</name>
+				<type>LIST</type>
+				<items>
+					<item>Off</item>
+					<item>On</item>
+					<item>Trace</item>
+				</items>
+				<default>Off</default>
+				<readonly>false</readonly>
+			</property>
+		</properties>
+		<actions>
+			<action>
+				<name>Read Panel Status Now</name>
+				<command>ReadPanel</command>
+			</action>
+			<action>
+				<name>Resync Control4 State</name>
+				<command>Resync</command>
+			</action>
+			<action>
+				<name>Print Status (Lua tab)</name>
+				<command>PrintStatus</command>
+			</action>
+		</actions>
+		<commands>
+			<command>
+				<name>Bypass Zone</name>
+				<description>Bypass zone PARAM1 on NAME</description>
+				<params>
+					<param>
+						<name>Zone</name>
+						<type>RANGED_INTEGER</type>
+						<minimum>1</minimum>
+						<maximum>144</maximum>
+					</param>
+				</params>
+			</command>
+			<command>
+				<name>Unbypass Zone</name>
+				<description>Remove the bypass from zone PARAM1 on NAME</description>
+				<params>
+					<param>
+						<name>Zone</name>
+						<type>RANGED_INTEGER</type>
+						<minimum>1</minimum>
+						<maximum>144</maximum>
+					</param>
+				</params>
+			</command>
+			<command>
+				<name>Activate Output</name>
+				<description>Turn on controlled output PARAM1 of NAME</description>
+				<params>
+					<param>
+						<name>Output</name>
+						<type>RANGED_INTEGER</type>
+						<minimum>1</minimum>
+						<maximum>8</maximum>
+					</param>
+				</params>
+			</command>
+			<command>
+				<name>Deactivate Output</name>
+				<description>Turn off controlled output PARAM1 of NAME</description>
+				<params>
+					<param>
+						<name>Output</name>
+						<type>RANGED_INTEGER</type>
+						<minimum>1</minimum>
+						<maximum>8</maximum>
+					</param>
+				</params>
+			</command>
+		</commands>
+	</config>
+</devicedata>

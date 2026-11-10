@@ -1,0 +1,54 @@
+DirectorLink · PIMA FORCE for Control4
+Copyright 2026 DirectorLink
+
+This product is licensed under the Apache License 2.0 (see LICENSE).
+
+DirectorLink is an independent project, not affiliated with Control4 or Snap One.
+Not affiliated with or endorsed by PIMA Electronic Systems. Product names are trademarks of their owners.
+
+Credits
+
+The driver speaks the panel's local JSON interface as PIMA's "Force Interface
+JSON Format Specification" v2.4 describes it, and the panel's standard alarm
+reports (SIA DC-09 with Contact-ID or SIA codes) for panels without it.
+
+How the panel behaves in the field (framing, ACKs, the account, Windows-1255
+text, pacing) was checked against these projects:
+
+- C4-PimaForce (https://github.com/efic1/C4-PimaForce), MIT License,
+  Copyright (c) 2026 Efi.
+- pima-force-ha-integration (https://github.com/amithalp/pima-force-ha-integration),
+  MIT License, Copyright (c) 2026 Assaf Arbelle (@aarbelle) and amithalp.
+  The panel frames in tests/test_force_protocol.lua are taken from its test
+  fixtures (the account and names there are synthetic).
+- homebridge-pima-force (https://github.com/electricmonk/homebridge-pima-force),
+  LGPL-3.0, read for protocol facts only; none of its code is included.
+
+For the two MIT projects, their license applies to what was taken from them:
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+
+Control4 interfaces follow the public Snap One DriverWorks documentation
+(https://snap-one.github.io/docs-driverworks-fundamentals/) and Snap One's
+security proxy template code
+(https://github.com/snap-one/drivers-template-code-public).
+
+The SIA DC-09 reports in tests/test_sia.lua were captured from a FORCE 32C
+(firmware 1.5.1). The account in them is a made-up number set for the test,
+and they hold no codes or names.
