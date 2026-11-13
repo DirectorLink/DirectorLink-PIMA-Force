@@ -4,6 +4,11 @@ All notable changes to DirectorLink · PIMA FORCE for Control4. Versions follow 
 
 DirectorLink is an independent project, not affiliated with Control4, Snap One or PIMA.
 
+## 1.2.1 (1020199) - 2026-11-13
+
+- **Arm and disarm from DirectorLink in about a second, not 15.** The driver ran under LuaJIT (`jit="1"` in driver.xml, from its first version). There, on the controller, the X25519 that opens each of DirectorLink 1.16.0's sealed commands took 14 s, and Director, which runs drivers one at a time, waited: DirectorLink could not answer the app meanwhile, so the app said a command had failed that then went through. Now the driver runs on standard Lua, as DirectorLink does, where the same calculation takes well under a second. Seen on the owner's controller: "Command took too long … 14.3 s" in Director's log for each command. The build refuses `jit` from now on.
+- Composer's description says CMS 1, 2 or 3, as the setup does since 1.1.0.
+
 ## 1.2.0 (1020099) - 2026-11-13
 
 DirectorLink's alarm agreement, version 2 (for DirectorLink 1.16.0).

@@ -114,9 +114,17 @@ def stamp_xml(xml_text, number):
     return xml_text
 
 
+def check_runtime(xml_text):
+    # Under LuaJIT on the controller (jit="1"), the X25519 of a sealed command took 14 s (1.2.0).
+    script = re.search(r"<script\b[^>]*>", xml_text)
+    if not script or re.search(r"\bjit\s*=", script.group(0)):
+        sys.exit('driver.xml: <script> must run on standard Lua (no jit="1"): X25519 takes 14 s under LuaJIT')
+
+
 def build(semver, number):
     xml_text = read(os.path.join(SRC, "driver.xml"))
     check_xml(xml_text, read(os.path.join(SRC, "driver.lua")))
+    check_runtime(xml_text)
     lua = assemble_lua(semver)
     os.makedirs(DIST, exist_ok=True)
     out = os.path.join(DIST, PACKAGE)

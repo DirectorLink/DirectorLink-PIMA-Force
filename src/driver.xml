@@ -214,8 +214,10 @@
 		</event>
 	</events>
 	<config>
-		<script file="driver.lua" jit="1"/>
-		<documentation file="www/documentation.html">DirectorLink · PIMA FORCE: free, open-source driver for PIMA FORCE alarm panels, on the panel's local JSON interface (or receive only, SIA DC-09). The panel connects to this driver: point a CMS path (CMS 2 or 3, Network, Protocol JSON) at the controller's IP and the Listen Port. See the Documentation tab in Composer Pro. DirectorLink is an independent project, not affiliated with Control4, Snap One or PIMA.</documentation>
+		<!-- Standard Lua, as DirectorLink runs: under LuaJIT (jit="1") on the controller (aarch64),
+		     one X25519 multiplication for a sealed command took 14 s and held Director meanwhile. -->
+		<script file="driver.lua"/>
+		<documentation file="www/documentation.html">DirectorLink · PIMA FORCE: free, open-source driver for PIMA FORCE alarm panels, on the panel's local JSON interface (or receive only, SIA DC-09). The panel connects to this driver: point a CMS path (CMS 1, 2 or 3, Network, Protocol JSON) at the controller's IP and the Listen Port. See the Documentation tab in Composer Pro. DirectorLink is an independent project, not affiliated with Control4, Snap One or PIMA.</documentation>
 		<properties>
 			<property>
 				<name>Driver Version</name>
