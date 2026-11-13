@@ -270,7 +270,7 @@ T.test("Control4 cannot arm, disarm or bypass in receive-only mode", function()
 end)
 
 T.test("DirectorLink is told arming can't work while the panel only reports", function()
-	T.eq(M.vars.DIRECTORLINK_ALARM, "1")
+	T.eq(M.vars.DIRECTORLINK_ALARM, "2")
 	T.eq(M.vars.DIRECTORLINK_ALARM_CONTROL, "0")
 	connect()
 	send(body("NULL", ""))

@@ -5,8 +5,8 @@
     python tools/build.py --no-tests   (skip the Lua tests)
 
 The Lua tests run first when lua5.1 (or lua, luajit) is found. driver.lua gets
-src/pima_force.lua inlined in place of its require() line, so the package holds a
-single script, and DRIVER_SEMVER set from the VERSION file (1.0.0, or 1.0.0-beta.2
+src/pima_force.lua, src/x25519.lua and src/base64.lua inlined in place of their
+require() lines, so the package holds a single script, and DRIVER_SEMVER set from the VERSION file (1.0.0, or 1.0.0-beta.2
 for a beta). The packaged driver.xml gets <version> = major*1000000 + minor*10000 +
 patch*100 + build, where build is the beta number (1-98) or 99 for the release
 itself, so every beta and the release that follows it count up (1.0.0-beta.1 ->
@@ -31,7 +31,12 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "src")
 DIST = os.path.join(ROOT, "dist")
 PACKAGE = "DirectorLink-PIMA-Force.c4z"
-REQUIRE_LINE = 'local F = require("pima_force")'
+# Each module is inlined in place of its require() line, so the package holds a single script.
+MODULES = (
+    ('local F = require("pima_force")', "pima_force.lua", "F"),
+    ('local X25519 = require("x25519")', "x25519.lua", "X25519"),
+    ('local Base64 = require("base64")', "base64.lua", "Base64"),
+)
 TESTS = ("tests/test_force_protocol.lua", "tests/test_driver.lua", "tests/test_sia.lua")
 
 
@@ -85,12 +90,15 @@ def check_xml(xml_text, lua_text):
 
 def assemble_lua(semver):
     lua = read(os.path.join(SRC, "driver.lua"))
-    module = read(os.path.join(SRC, "pima_force.lua"))
-    if REQUIRE_LINE not in lua:
-        sys.exit(f"'{REQUIRE_LINE}' not found in driver.lua")
-    inlined = "local F = (function()\n-- ===== pima_force.lua (inlined by tools/build.py) =====\n" \
-        + module.rstrip() + "\nend)()\n-- ===== end pima_force.lua ====="
-    lua = lua.replace(REQUIRE_LINE, inlined, 1)
+    for line, name, var in MODULES:
+        if line not in lua:
+            sys.exit(f"'{line}' not found in driver.lua")
+        module = read(os.path.join(SRC, name))
+        inlined = (f"local {var} = (function()\n-- ===== {name} (inlined by tools/build.py) =====\n"
+                   + module.rstrip() + f"\nend)()\n-- ===== end {name} =====")
+        lua = lua.replace(line, inlined, 1)
+    if re.search(r"\brequire\s*\(", re.sub(r"--[^\n]*", "", lua)):
+        sys.exit("driver.lua still requires a module: Control4 loads only the one script")
     lua, n = re.subn(r'^DRIVER_SEMVER = "[^"]*"', f'DRIVER_SEMVER = "{semver}"', lua, count=1, flags=re.M)
     if n != 1:
         sys.exit("DRIVER_SEMVER line not found in driver.lua")

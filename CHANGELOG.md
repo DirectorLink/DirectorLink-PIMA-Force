@@ -4,6 +4,15 @@ All notable changes to DirectorLink · PIMA FORCE for Control4. Versions follow 
 
 DirectorLink is an independent project, not affiliated with Control4, Snap One or PIMA.
 
+## 1.2.0 (1020099) - 2026-11-13
+
+DirectorLink's alarm agreement, version 2 (for DirectorLink 1.16.0).
+
+- **Sealed commands.** The driver makes an X25519 key pair once (from Director's random UUIDs, kept encrypted) and publishes the public key in `DIRECTORLINK_ALARM_KEY`. DirectorLink 1.16.0 seals each arm and disarm to it, so the code is no longer written in Control4's debug log, which records every command one driver sends another. The driver checks the command's MAC before decrypting it, and refuses a command that is replayed, more than a minute old, or meant for another action or mode. It logs none of it.
+- **DirectorLink Without Code** (new property, default No; Arm only; Arm and disarm), told in `DIRECTORLINK_ALARM_WITHOUT_CODE`: how far a sealed command without a code is carried out with Panel User Code. DirectorLink's admins must allow it too.
+- `DIRECTORLINK_ALARM` is now `2`. DirectorLink 1.15.0 still works: its typed codes are taken as before.
+- The README has no Hebrew text; Composer's Documentation tab neither.
+
 ## 1.1.0 (1010099) - 2026-11-13
 
 - **Shabbat mode.** **Shabbat** is offered next to Away, Home and Night (Navigator, DirectorLink): PIMA's own Shabbat arming (JSON operation 43), on panels sold in Israel as a "Shabbat and holiday system" (approved by the Zomet Institute). A panel that is not one refuses it.

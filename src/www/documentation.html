@@ -51,6 +51,8 @@ CMS 2 or 3 if a monitoring company uses CMS 1.</p>
 (arm/disarm from Composer), for arming from Navigator when no code is required, and for bypass. The installer
 code does not work here.</td></tr>
 <tr><td>Require Code To Arm</td><td>Yes: Navigator asks for a code to arm, and that code is sent to the panel.</td></tr>
+<tr><td>DirectorLink Without Code</td><td>No (default): DirectorLink sends a typed code each time. Arm only / Arm and
+disarm: DirectorLink 1.16.0 and later may arm (or disarm) without one, with the Panel User Code, if its admins allow it too.</td></tr>
 <tr><td>Partitions In Use / Partition N Zones</td><td>FORCE 32C supports 4 partitions. List each partition's zones,
 for example <code>1-8,12</code>, or <code>all</code>.</td></tr>
 <tr><td>Zone Count</td><td>0 = read from the panel (recommended). Zone bindings are created automatically.</td></tr>
@@ -108,12 +110,13 @@ report and switches to receive-only mode. Connection Status then reads
 <b>DirectorLink</b> (with its <i>Alarm Status</i> property On) the DirectorLink app shows each partition's
 state on Home. From DirectorLink 1.15.0, with its <i>Alarm Control</i> property On, people you allow can also
 arm and disarm from the app: they type their alarm code each time, it goes to the panel as typed and the panel
-checks it. This driver never arms or disarms for DirectorLink with the Panel User Code.</p>
-<p>The driver tells DirectorLink when arming and disarming can work, in the variable
-<code>DIRECTORLINK_ALARM_CONTROL</code>: <code>1</code> with the JSON interface connected, <code>0</code> in
+checks it. The Panel User Code is used for DirectorLink only as far as <b>DirectorLink Without Code</b> allows.</p>
+<p>The driver follows DirectorLink's alarm agreement, version 2 (<code>DIRECTORLINK_ALARM</code> = <code>2</code>).
+<code>DIRECTORLINK_ALARM_CONTROL</code> is <code>1</code> with the JSON interface connected, <code>0</code> in
 receive-only mode or without a panel connection (DirectorLink then shows the state only).
-<code>DIRECTORLINK_ALARM</code> = <code>1</code> says the driver follows DirectorLink's alarm agreement.
-DirectorLink is not required: without it the driver works the same.</p>
+<code>DIRECTORLINK_ALARM_KEY</code> is the driver's public key: DirectorLink 1.16.0 seals each command to it, so
+the code never appears in Control4's logs. <code>DIRECTORLINK_ALARM_WITHOUT_CODE</code> says what
+<b>DirectorLink Without Code</b> allows. DirectorLink is not required: without it the driver works the same.</p>
 
 <h2>4. Troubleshooting (Connection Status)</h2>
 <table>

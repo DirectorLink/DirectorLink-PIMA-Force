@@ -273,6 +273,18 @@
 				<readonly>false</readonly>
 			</property>
 			<property>
+				<name>DirectorLink Without Code</name>
+				<type>LIST</type>
+				<items>
+					<item>No</item>
+					<item>Arm only</item>
+					<item>Arm and disarm</item>
+				</items>
+				<default>No</default>
+				<readonly>false</readonly>
+				<description>How far DirectorLink 1.16.0 and later may arm and disarm without a typed code, with Panel User Code (DirectorLink's own setting must allow it too). No: a code each time.</description>
+			</property>
+			<property>
 				<name>Partitions In Use</name>
 				<type>RANGED_INTEGER</type>
 				<minimum>1</minimum>
