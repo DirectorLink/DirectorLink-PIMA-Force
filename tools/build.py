@@ -5,8 +5,8 @@
     python tools/build.py --no-tests   (skip the Lua tests)
 
 The Lua tests run first when lua5.1 (or lua, luajit) is found. driver.lua gets
-src/pima_force.lua, src/x25519.lua and src/base64.lua inlined in place of their
-require() lines, so the package holds a single script, and DRIVER_SEMVER set from the VERSION file (1.0.0, or 1.0.0-beta.2
+src/pima_force.lua inlined in place of its require() line, so the package holds a
+single script, and DRIVER_SEMVER set from the VERSION file (1.0.0, or 1.0.0-beta.2
 for a beta). The packaged driver.xml gets <version> = major*1000000 + minor*10000 +
 patch*100 + build, where build is the beta number (1-98) or 99 for the release
 itself, so every beta and the release that follows it count up (1.0.0-beta.1 ->
@@ -34,8 +34,6 @@ PACKAGE = "DirectorLink-PIMA-Force.c4z"
 # Each module is inlined in place of its require() line, so the package holds a single script.
 MODULES = (
     ('local F = require("pima_force")', "pima_force.lua", "F"),
-    ('local X25519 = require("x25519")', "x25519.lua", "X25519"),
-    ('local Base64 = require("base64")', "base64.lua", "Base64"),
 )
 TESTS = ("tests/test_force_protocol.lua", "tests/test_driver.lua", "tests/test_sia.lua")
 
@@ -114,17 +112,9 @@ def stamp_xml(xml_text, number):
     return xml_text
 
 
-def check_runtime(xml_text):
-    # Under LuaJIT on the controller (jit="1"), the X25519 of a sealed command took 14 s (1.2.0).
-    script = re.search(r"<script\b[^>]*>", xml_text)
-    if not script or re.search(r"\bjit\s*=", script.group(0)):
-        sys.exit('driver.xml: <script> must run on standard Lua (no jit="1"): X25519 takes 14 s under LuaJIT')
-
-
 def build(semver, number):
     xml_text = read(os.path.join(SRC, "driver.xml"))
     check_xml(xml_text, read(os.path.join(SRC, "driver.lua")))
-    check_runtime(xml_text)
     lua = assemble_lua(semver)
     os.makedirs(DIST, exist_ok=True)
     out = os.path.join(DIST, PACKAGE)

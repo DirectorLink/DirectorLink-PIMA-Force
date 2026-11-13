@@ -20,31 +20,23 @@
     * An ACK only means "received": state is confirmed by reading System Key
       Status (2310) and Zone Status (2149) back from the panel.
 
-  DirectorLink's alarm agreement, version 2 (DirectorLink 1.16.0 and later;
-  version 1 for 1.15.0):
-    * DIRECTORLINK_ALARM = "2" (the agreement's version), written at every start.
-    * DIRECTORLINK_ALARM_KEY = this driver's X25519 public key (64 hex digits).
-      DirectorLink 1.16.0 seals every arm and disarm to it, so that Director's
-      debug log, which records the commands one driver sends another, sees no
-      code (OpenDirectorLinkCommand). The private key is made once from
-      Director's random UUIDs and kept encrypted (C4:PersistSetValue).
-    * DIRECTORLINK_ALARM_WITHOUT_CODE = "none", "arm" or "arm_disarm", from
-      the property "DirectorLink Without Code": how far a sealed command
-      without a code is carried out with Panel User Code.
+  DirectorLink's alarm agreement, version 1 (DirectorLink 1.15.0 and later):
+    * DIRECTORLINK_ALARM = "1" (the agreement's version), written at every start.
     * DIRECTORLINK_ALARM_CONTROL = "1" while arming and disarming can work
       (the JSON interface connected and verified), "0" otherwise (receive
       only, or no panel connection). DirectorLink offers Arm and Disarm only
       while it says "1".
     * A PARTITION_ARM or PARTITION_DISARM from DirectorLink (InterfaceID
-      "DirectorLink") carries a sealed command ("dl2:...") or, from
-      DirectorLink 1.15.0, the typed code. The typed code goes to the panel,
-      which checks it. Panel User Code is used only for a sealed command
-      without a code, and only as far as "DirectorLink Without Code" allows.
+      "DirectorLink") always carries the code a person typed; the panel
+      checks it. It is never carried out with Panel User Code.
+    * DIRECTORLINK_ALARM_KEY = "" and DIRECTORLINK_ALARM_WITHOUT_CODE = "none":
+      1.2.0 and 1.2.1 sealed DirectorLink's commands (version 2); 1.2.2 no
+      longer does (on the controller one X25519 in this driver took 14 s), and
+      clears both so that DirectorLink sends the typed code. A sealed command
+      ("dl2:...") is refused.
 ]]
 
 local F = require("pima_force")
-local X25519 = require("x25519")
-local Base64 = require("base64")
 
 ---------------------------------------------------------------------------
 -- Constants
@@ -97,24 +89,20 @@ DRIVER_SEMVER = "dev"
 -- DirectorLink's alarm agreement (header). Never reorder: Director numbers
 -- variables in the order they are added, and DirectorLink reads them by name.
 DIRECTORLINK_INTERFACE = "DirectorLink"
-AGREEMENT_VERSION = "2"
 AGREEMENT_VARIABLES = {
-	{ "DIRECTORLINK_ALARM", AGREEMENT_VERSION, "STRING" },
+	{ "DIRECTORLINK_ALARM", "1", "STRING" },
 	{ "DIRECTORLINK_ALARM_CONTROL", "0", "STRING" },
 	{ "DIRECTORLINK_ALARM_KEY", "", "STRING" },
 	{ "DIRECTORLINK_ALARM_WITHOUT_CODE", "none", "STRING" },
 }
--- The sealed command (DirectorLink's ADR-092): its label, how old it may be,
--- and where the private key is kept (encrypted)
-COMMAND_PREFIX = "dl2:"
-COMMAND_LABEL = "DirectorLink alarm v2"
-COMMAND_SECONDS = 60
-SECRET_STORE = "directorlink_alarm_secret"
-WITHOUT_CODE_LEVELS = { No = "none", ["Arm only"] = "arm", ["Arm and disarm"] = "arm_disarm" }
+-- What 1.2.0 and 1.2.1 sent DirectorLink's commands sealed with, and where
+-- they kept their private key (deleted at start)
+SEALED_PREFIX = "dl2:"
+OLD_SECRET_STORE = "directorlink_alarm_secret"
 
 PROPERTY_ORDER = {
 	"Debug Mode", "Listen Port", "Account ID", "Panel IP Address", "Panel User Code",
-	"Require Code To Arm", "DirectorLink Without Code", "Partitions In Use", "Partition 1 Zones", "Partition 2 Zones",
+	"Require Code To Arm", "Partitions In Use", "Partition 1 Zones", "Partition 2 Zones",
 	"Partition 3 Zones", "Partition 4 Zones", "Zone Count", "Reverse Zone Names",
 	"Allow Zone Bypass", "Status Poll Interval (s)", "Link Timeout (s)",
 }
@@ -745,118 +733,10 @@ end
 
 -- Written on every start, so they are right after a driver update too
 function WriteAgreementVariables()
-	SetAgreementVariable("DIRECTORLINK_ALARM", AGREEMENT_VERSION, true)
-	SetAgreementVariable("DIRECTORLINK_ALARM_KEY", g.alarmPublicHex or "", true)
-	SetAgreementVariable("DIRECTORLINK_ALARM_WITHOUT_CODE", g.dlWithoutCode or "none", true)
+	SetAgreementVariable("DIRECTORLINK_ALARM", "1", true)
+	SetAgreementVariable("DIRECTORLINK_ALARM_KEY", "", true)
+	SetAgreementVariable("DIRECTORLINK_ALARM_WITHOUT_CODE", "none", true)
 	UpdateControlMarker(true)
-end
-
----------------------------------------------------------------------------
--- DirectorLink's sealed commands (agreement version 2)
----------------------------------------------------------------------------
-local function Hmac(keyHex, data)
-	local ok, mac = pcall(function()
-		return C4:HMAC("SHA256", keyHex, data, { key_encoding = "HEX", data_encoding = "NONE", return_encoding = "HEX" })
-	end)
-	if ok and type(mac) == "string" and #mac == 64 then return mac:lower() end
-	return nil
-end
-
-local function SameText(a, b)
-	if type(a) ~= "string" or type(b) ~= "string" or #a ~= #b then return false end
-	local same = true
-	for i = 1, #a do
-		if a:byte(i) ~= b:byte(i) then same = false end
-	end
-	return same
-end
-
--- The key pair: made once from Director's random UUIDs (the OS's entropy),
--- hashed; kept encrypted. Never logged.
-function LoadAlarmKey()
-	local ok, stored = pcall(function() return C4:PersistGetValue(SECRET_STORE, true) end)
-	local hex = ok and type(stored) == "string" and stored:lower() or ""
-	if not (#hex == 64 and hex:match("^%x+$")) then
-		local seed = {}
-		for i = 1, 4 do seed[i] = tostring(C4:UUID("RANDOM")) end
-		seed[#seed + 1] = tostring(os.time()) .. tostring(os.clock()) .. tostring({})
-		local made = C4:Hash("SHA256", table.concat(seed, "|"), { return_encoding = "HEX" })
-		hex = type(made) == "string" and made:lower() or ""
-		if #hex ~= 64 then
-			Log("ERROR", "No key for DirectorLink's sealed commands: Director gave no hash")
-			return
-		end
-		pcall(function() C4:PersistSetValue(SECRET_STORE, hex, true) end)
-		Log("INFO", "Made the key for DirectorLink's sealed commands")
-	end
-	g.alarmSecret = Base64.fromHex(hex)
-	g.alarmPublic = X25519.publicKey(g.alarmSecret)
-	g.alarmPublicHex = Base64.toHex(g.alarmPublic)
-end
-
--- The fields of a sealed command ({ v, a, m, c, n, t }), or nil and why.
--- Nothing is decrypted before its MAC checks out.
-function OpenDirectorLinkCommand(token)
-	if type(token) ~= "string" or token:sub(1, #COMMAND_PREFIX) ~= COMMAND_PREFIX or not g.alarmSecret then
-		return nil, "not a sealed command"
-	end
-	local raw = Base64.decode(token:sub(#COMMAND_PREFIX + 1))
-	if not raw or #raw < 96 or (#raw - 80) % 16 ~= 0 then return nil, "malformed" end
-	local public, iv = raw:sub(1, 32), raw:sub(33, 48)
-	local ct, mac = raw:sub(49, #raw - 32), raw:sub(#raw - 31)
-	local shared = X25519.shared(g.alarmSecret, public)
-	if not shared then return nil, "malformed" end
-	local prk = Hmac(Base64.toHex(shared), COMMAND_LABEL .. public .. g.alarmPublic)
-	local encKey, macKey = prk and Hmac(prk, "enc"), prk and Hmac(prk, "mac")
-	if not encKey or not macKey then return nil, "no HMAC" end
-	if not SameText(Hmac(macKey, public .. iv .. ct), Base64.toHex(mac)) then return nil, "not sealed to this driver" end
-	local ok, plaintext = pcall(function()
-		return C4:Decrypt("AES-256-CBC", encKey, Base64.toHex(iv), Base64.toHex(ct), {
-			key_encoding = "HEX", iv_encoding = "HEX", data_encoding = "HEX", return_encoding = "NONE", padding = true,
-		})
-	end)
-	local fields = ok and type(plaintext) == "string" and F.decode(plaintext) or nil
-	if type(fields) ~= "table" or tonumber(fields.v) ~= 2 then return nil, "unreadable" end
-	return fields
-end
-
-local seenNonces = {}
-
--- The code for a sealed command of `action` ("arm"/"disarm") in `mode`: the
--- typed one, or Panel User Code where "DirectorLink Without Code" allows it;
--- nil when the command is refused (said in the log without the command).
-local function SealedCode(token, action, mode)
-	local fields, why = OpenDirectorLinkCommand(token)
-	if not fields then
-		Log("WARN", "DirectorLink's %s refused: %s", action, why)
-		return nil
-	end
-	local now = Now()
-	for nonce, at in pairs(seenNonces) do
-		if now - at > 2 * COMMAND_SECONDS then seenNonces[nonce] = nil end
-	end
-	local t, nonce = tonumber(fields.t), fields.n
-	if fields.a ~= action or (action == "arm" and fields.m ~= mode) then
-		Log("WARN", "DirectorLink's %s refused: it was sealed for another command", action)
-		return nil
-	end
-	if not t or math.abs(now - t) > COMMAND_SECONDS then
-		Log("WARN", "DirectorLink's %s refused: too old", action)
-		return nil
-	end
-	if type(nonce) ~= "string" or #nonce ~= 16 or seenNonces[nonce] then
-		Log("WARN", "DirectorLink's %s refused: already used", action)
-		return nil
-	end
-	seenNonces[nonce] = now
-	if type(fields.c) == "string" and fields.c ~= "" then return fields.c end
-	local level = g.dlWithoutCode or "none"
-	if level == "arm_disarm" or (level == "arm" and action == "arm") then
-		Log("INFO", "DirectorLink's %s without a code, as DirectorLink Without Code allows", action)
-		return g.panelCode
-	end
-	Log("WARN", "DirectorLink's %s without a code refused: DirectorLink Without Code is %s", action, level)
-	return nil
 end
 
 function AgreementVariable(name)
@@ -1311,11 +1191,14 @@ end
 -- code typed on a Control4 screen is sent as-is (the panel checks it).
 -- DirectorLink's commands carry a typed code and never fall back to the
 -- driver's code (DirectorLink's alarm agreement).
-local function ResolveCode(t, codeRequired, action, mode)
+local function ResolveCode(t, codeRequired)
 	local iface = Param(t, "InterfaceID", "INTERFACE_ID") or ""
 	local typed = Trim(Param(t, "UserCode", "USER_CODE") or "")
 	if iface == DIRECTORLINK_INTERFACE then
-		if typed:sub(1, #COMMAND_PREFIX) == COMMAND_PREFIX then return SealedCode(typed, action, mode) end
+		if typed:sub(1, #SEALED_PREFIX) == SEALED_PREFIX then
+			Log("WARN", "DirectorLink sent a sealed command: this driver takes the typed code only (DirectorLink reads that again within seconds)")
+			return nil
+		end
 		return typed ~= "" and typed or nil
 	end
 	if iface == "DirectorProgramming" then return g.panelCode end
@@ -1387,7 +1270,7 @@ function ArmPartition(p, t)
 	if p > g.partitionCount then return ArmFailed(p, "NA", iface, "Partition not in use") end
 	if g.mode == "sia" then return ArmFailed(p, "NA", iface, RECEIVE_ONLY_TEXT) end
 	if not ActiveVerified() then return ArmFailed(p, "NA", iface, "Arm failed: panel not connected") end
-	local code = ResolveCode(t, g.requireArmCode, "arm", mode)
+	local code = ResolveCode(t, g.requireArmCode)
 	if not code then return ArmFailed(p, "keypad", iface, nil) end
 	local problem = CodeProblem(code)
 	if problem then return ArmFailed(p, "NA", iface, problem) end
@@ -1402,7 +1285,7 @@ function DisarmPartition(p, t)
 	if p > g.partitionCount then return DisarmFailed(p, iface, "Partition not in use") end
 	if g.mode == "sia" then return DisarmFailed(p, iface, RECEIVE_ONLY_TEXT) end
 	if not ActiveVerified() then return DisarmFailed(p, iface, "Disarm failed: panel not connected") end
-	local code = ResolveCode(t, true, "disarm")
+	local code = ResolveCode(t, true)
 	if not code then return DisarmFailed(p, iface, "Enter your alarm code to disarm") end
 	local problem = CodeProblem(code)
 	if problem then return DisarmFailed(p, iface, problem) end
@@ -2032,11 +1915,6 @@ PROPERTY_HANDLERS["Panel User Code"] = function(value)
 	end
 end
 
-PROPERTY_HANDLERS["DirectorLink Without Code"] = function(value)
-	g.dlWithoutCode = WITHOUT_CODE_LEVELS[value] or "none"
-	SetAgreementVariable("DIRECTORLINK_ALARM_WITHOUT_CODE", g.dlWithoutCode)
-end
-
 PROPERTY_HANDLERS["Require Code To Arm"] = function(value)
 	g.requireArmCode = (value == "Yes")
 	if not g.initializing then SendCodeRequired() end
@@ -2158,7 +2036,7 @@ function OnDriverInit(dit)
 		g.siaTroubles = LoadNumberKeyed(PersistData.siaTroubles)
 	end
 	AddAgreementVariables()
-	LoadAlarmKey()
+	pcall(function() C4:PersistDeleteValue(OLD_SECRET_STORE) end)
 end
 
 function OnDriverLateInit(dit)

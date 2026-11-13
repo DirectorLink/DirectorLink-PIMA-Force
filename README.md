@@ -95,7 +95,6 @@ The Documentation tab in Composer covers every property, the behaviour and troub
 1. In DirectorLink's Composer properties, set **Alarm Status** to **On**: the app shows each partition's state on Home, and the home's TV screens tell when the alarm goes off.
 2. To arm and disarm from the app (DirectorLink 1.15.0 and later), set **Alarm Control** to **On**. Admins can then arm and disarm; for a member, turn on **Arms and disarms the alarm** in the app's Settings → Users.
 3. In the app, Home's alarm card shows **Arm** (Away, Home, Night, Shabbat) and **Disarm**. Each asks for your alarm code, which goes to the panel as typed and is checked there.
-4. *(Optional, DirectorLink 1.16.0 and later)* To arm, or arm and disarm, **without a code**: set this driver's **DirectorLink Without Code** property to **Arm only** or **Arm and disarm**, and choose the same in the DirectorLink app (admins, Settings → Alarm). The lower of the two applies, and the driver uses Panel User Code. DirectorLink tells its admins each time the alarm is disarmed without a code.
 
 If the card says the alarm can't be armed or disarmed from DirectorLink right now, the panel isn't on JSON (receive only) or isn't connected. Composer shows it in the driver's variable `DIRECTORLINK_ALARM_CONTROL`, which is `1` when arming can work.
 
@@ -113,13 +112,12 @@ FORCE firmware without the JSON interface (like 1.5.1) can still report to the d
 
 ## With DirectorLink
 
-The partitions are Control4's standard ones, so DirectorLink shows them like any Control4 alarm ([setup](#3-in-directorlink-optional)). The driver also follows DirectorLink's alarm agreement, version 2:
+The partitions are Control4's standard ones, so DirectorLink shows them like any Control4 alarm ([setup](#3-in-directorlink-optional)). The driver also follows DirectorLink's alarm agreement, version 1:
 
-- `DIRECTORLINK_ALARM` = `2`, written on every start.
+- `DIRECTORLINK_ALARM` = `1`, written on every start.
 - `DIRECTORLINK_ALARM_CONTROL` = `1` while arming and disarming can work (the JSON interface connected), `0` in receive-only mode or without a panel connection. DirectorLink offers Arm and Disarm only while it says `1`.
-- `DIRECTORLINK_ALARM_KEY`: the driver's public key. DirectorLink 1.16.0 and later seals each arm and disarm to it, so the code never appears in Control4's own logs; only this driver can open the command. Its private key is made on the controller, once, and kept encrypted. A command that is replayed, more than a minute old, or meant for another action or mode is refused.
-- `DIRECTORLINK_ALARM_WITHOUT_CODE`: what the **DirectorLink Without Code** property allows (`none`, `arm` or `arm_disarm`). Only then may DirectorLink arm (or disarm) without a typed code, and the driver uses Panel User Code. DirectorLink's admins must allow it as well.
-- DirectorLink 1.15.0 sends the typed code itself (version 1). It is still taken as typed and never replaced by Panel User Code.
+- An arm or disarm from DirectorLink (InterfaceID `DirectorLink`) needs a typed code, which goes to the panel as typed, and is never carried out with Panel User Code.
+- `DIRECTORLINK_ALARM_KEY` is empty and `DIRECTORLINK_ALARM_WITHOUT_CODE` is `none`. Versions 1.2.0 and 1.2.1 sealed DirectorLink's commands to a key of the driver's (version 2), so that Control4's debug log never saw the code; on the controller that took 14 seconds a command, so 1.2.2 dropped it. Like any Control4 command between drivers, the typed code is again in Director's debug log, which is root-only, in the controller's memory and gone within a few hours.
 
 Without DirectorLink the driver works the same.
 

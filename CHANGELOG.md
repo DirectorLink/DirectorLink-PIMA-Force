@@ -4,6 +4,16 @@ All notable changes to DirectorLink · PIMA FORCE for Control4. Versions follow 
 
 DirectorLink is an independent project, not affiliated with Control4, Snap One or PIMA.
 
+## 1.2.2 (1020299) - 2026-11-13
+
+Back to the typed code, as 1.1.0: arming and disarming from DirectorLink is quick again.
+
+- **No more sealed commands.** On the owner's controller (CORE-1), the X25519 that 1.2.0 added took 14 seconds inside this driver, at every start and for every command from DirectorLink 1.16.0, and Director, which runs drivers one at a time, waited meanwhile (Composer froze for as long when the driver was updated). DirectorLink, on the same controller, runs the same code in well under a second; why this driver's Lua is so much slower is not known. The owner chose speed: the driver follows DirectorLink's alarm agreement version 1 again (`DIRECTORLINK_ALARM` = `1`), so DirectorLink sends the typed code. Like any command between Control4 drivers, that code is again in Director's own debug log (root-only, in memory, gone within a few hours).
+- `DIRECTORLINK_ALARM_KEY` is cleared and `DIRECTORLINK_ALARM_WITHOUT_CODE` is `none`, written at every start; the stored private key is deleted. A sealed command (`dl2:`) still in flight is refused and nothing is sent to the panel.
+- **DirectorLink Without Code is gone.** DirectorLink 1.16.0 arms and disarms without a code only for a driver that publishes a key, so the property could do nothing any more. Every arm and disarm from DirectorLink needs a typed code, as in 1.1.0.
+- The X25519 and base64 code (and their notice) are removed; the driver is one plain script again.
+- **1.2.1 was wrong about the cause:** running on standard Lua instead of LuaJIT changed nothing (14.2 s before and after). The driver stays on standard Lua, as DirectorLink runs.
+
 ## 1.2.1 (1020199) - 2026-11-13
 
 - **Arm and disarm from DirectorLink in about a second, not 15.** The driver ran under LuaJIT (`jit="1"` in driver.xml, from its first version). There, on the controller, the X25519 that opens each of DirectorLink 1.16.0's sealed commands took 14 s, and Director, which runs drivers one at a time, waited: DirectorLink could not answer the app meanwhile, so the app said a command had failed that then went through. Now the driver runs on standard Lua, as DirectorLink does, where the same calculation takes well under a second. Seen on the owner's controller: "Command took too long … 14.3 s" in Director's log for each command. The build refuses `jit` from now on.

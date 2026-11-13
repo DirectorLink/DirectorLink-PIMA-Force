@@ -44,13 +44,6 @@ For the two MIT projects, their license applies to what was taken from them:
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 
-src/x25519.lua and src/base64.lua come from DirectorLink
-(https://github.com/DirectorLink/DirectorLink, Apache License 2.0, Copyright
-2026 DirectorLink). x25519.lua follows TweetNaCl's field arithmetic
-(https://tweetnacl.cr.yp.to/, public domain). The tests' aes.lua and sha256.lua
-come from DirectorLink's tests as well, and tests/alarm_command.json is
-DirectorLink's shared test vector.
-
 Control4 interfaces follow the public Snap One DriverWorks documentation
 (https://snap-one.github.io/docs-driverworks-fundamentals/) and Snap One's
 security proxy template code
