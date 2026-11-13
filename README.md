@@ -57,20 +57,19 @@ Without JSON, ask PIMA support (support-il@pima-alarms.com, 03-6506411) or your 
 
 ### 1. On the panel: the JSON path to the controller (installer code)
 
-These are the steps of PIMA's JSON configuration guide. The menus are in Hebrew on Israeli panels; both names are given.
+These are the steps of PIMA's JSON configuration guide, with the menu names of PIMA's English guides.
 
 1. **Enter the installer menu:** press and hold the **Exit** key (↶), then type the **installer code**.
-2. **Events to report:** System Programming → CMS & Communication → Monitoring Stations → **CMS 1** → Event Reporting
-   (תכנות מערכת → מוקדים ותקשורת → מוקדים → מוקד 1 → דיווח ארועים).
-   Use CMS 2 or 3 if a monitoring company already uses CMS 1. Go to the **fourth screen** and mark **Zone/Output Change** (שינוי מצב אזור/יציאה). Without it, zones opening and closing don't reach Control4.
-3. *(Optional)* **CMS name:** name the station "Smart home" (בית חכם), so that a communication trouble on the keypad says what it is about.
-4. **Account number:** … → CMS 1 → Comm. Paths → **Network (Ethernet)** → Account Number (מספר מנוי). PIMA's guide uses **9999**; any number works, because the driver learns it. Set it for every partition in use.
-5. **Address:** … → Network (Ethernet) → Network Addresses (כתובות רשת): **URL/IP 1** = the controller's IP address, **PORT 1** = **7780** (the driver's Listen Port).
+2. **Events to report:** System Programming → CMS & Communication → Monitoring Stations → **CMS 1** → Event Reporting.
+   Use CMS 2 or 3 if a monitoring company already uses CMS 1. Go to the **fourth screen** and mark **Zone/Output Change**. Without it, zones opening and closing don't reach Control4.
+3. *(Optional)* **CMS name:** name the station "Smart home", so that a communication trouble on the keypad says what it is about.
+4. **Account number:** … → CMS 1 → Comm. Paths → **Network (Ethernet)** → Account Number. PIMA's guide uses **9999**; any number works, because the driver learns it. Set it for every partition in use.
+5. **Address:** … → Network (Ethernet) → Network Addresses: **URL/IP 1** = the controller's IP address, **PORT 1** = **7780** (the driver's Listen Port).
 6. **Protocol:** the second screen of Network (Ethernet):
-   - **Protocol: JSON** (פרוטוקול: JSON).
-   - Mark **Disable Encryption** (בטל הצפנה): the driver reads only unencrypted messages.
-   - Turn the **life signal** (אות חיים) on.
-7. **Remote disarm:** back to CMS & Communication → **General Settings** (הגדרות כלליות) → mark **Remote Disarm** (ניטרול מרחוק). Without it the panel refuses disarming from Control4 and DirectorLink.
+   - **Protocol: JSON**.
+   - Mark **Disable Encryption**: the driver reads only unencrypted messages.
+   - Turn the **life signal** on.
+7. **Remote disarm:** back to CMS & Communication → **General Settings** → mark **Remote Disarm**. Without it the panel refuses disarming from Control4 and DirectorLink.
 8. Press Exit until the status screen.
 
 The panel connects to the controller at its next report or life signal (within a few minutes), and reports **Panel programming changed** when you leave the installer menu.
