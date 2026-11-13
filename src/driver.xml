@@ -30,9 +30,10 @@
 		<!-- securitypanel proxy -->
 		<can_set_time>false</can_set_time>
 		<can_activate_partitions>false</can_activate_partitions>
-		<!-- security (partition) proxies. Arm states map to PIMA: Away = Full arm, Home = Home 1, Night = Home 2 -->
+		<!-- security (partition) proxies. Arm states map to PIMA: Away = Full arm, Home = Home 1, Night = Home 2,
+		     Shabbat = Shabbat arming (1.1.0; on panels sold as a "Shabbat system") -->
 		<ui_version>2</ui_version>
-		<arm_states>Away,Home,Night</arm_states>
+		<arm_states>Away,Home,Night,Shabbat</arm_states>
 		<supports_virtual_keypad>false</supports_virtual_keypad>
 		<has_fire>false</has_fire>
 		<has_medical>false</has_medical>

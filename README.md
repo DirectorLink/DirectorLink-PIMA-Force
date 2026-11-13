@@ -12,7 +12,11 @@ DirectorLink is an independent project, not affiliated with Control4, Snap One o
 
 **Download:** [releases](../../releases) · **Help and updates:** [directorlink.io/drivers/pima-force](https://directorlink.io/drivers/pima-force)
 
-> **Tested on a FORCE 32C** (firmware 1.5.1) in receive-only mode: arming, disarming and the partition's state reach Control4. The JSON interface (arming and disarming from Control4, zones, bypass) follows PIMA's specification and is tested against a simulated panel; reports from panels with JSON firmware are welcome: see [Support](#support).
+> **Tested on a FORCE 32C** in Israel:
+> - **Firmware 3.0.19 with the JSON interface:** the driver reads the panel (24 zones, the exit time), and DirectorLink 1.15.0 armed it Away and disarmed it with a typed code.
+> - **Firmware 1.5.1, receive only:** arming, disarming and the partition's state reach Control4.
+>
+> Reports from other panels and firmware are welcome: see [Support](#support).
 
 ## What you get
 
@@ -20,11 +24,11 @@ In Composer the driver adds a **Security Panel** and four **partitions** (Contro
 
 | Feature | With the JSON interface | Receive only (no JSON in the firmware) |
 |---|---|---|
-| Armed (Away, Home, Night), disarmed, exit delay | Yes | Armed and disarmed, from the panel's reports |
-| Arm and disarm from Control4 | Yes: Away = Full arm, Home = Home 1, Night = Home 2. Disarming needs a typed code | No |
+| Armed (Away, Home, Night, Shabbat), disarmed, exit delay | Yes | Armed and disarmed, from the panel's reports |
+| Arm and disarm from Control4 | Yes: Away = Full arm, Home = Home 1, Night = Home 2, Shabbat = Shabbat arming. Disarming needs a typed code | No |
 | Alarms (burglary, fire, gas, water, panic, medical, duress) | Yes | Yes |
 | Troubles (AC loss, low battery, tamper, communication) | Yes, from the panel's fault list | Yes, from its reports |
-| Zones open and closed | Yes, live, with the names in the panel (Hebrew too) | When the panel reports them; names set in Composer |
+| Zones open and closed | Yes, live, with the names in the panel (Hebrew too); kept from Control4 while armed for [Shabbat](#shabbat) | When the panel reports them; names set in Composer |
 | Bypass, outputs 1-8 | Yes | No |
 | Programming events | Communication Lost / Restored, Siren Active / Inactive, Access Denied, and the partitions' own | The same |
 
@@ -35,53 +39,81 @@ PIMA's interface has no command to raise panic, fire or medical alarms, so those
 ## Requirements
 
 - **Control4 OS 3.0.0 or newer** and Composer Pro.
-- **A PIMA FORCE panel** on the home network, with a free monitoring-station path (CMS 2 or 3; never one a monitoring company uses).
-- **For full control:** panel firmware with the JSON interface (PIMA wrote its specification for 1.6.x and later; 1.8.x is current). Older firmware works in [receive-only mode](#receive-only-mode).
-- The panel reaches the controller on the driver's **Listen Port** (7780 by default). The panel dials out; it opens no port of its own.
+- **A PIMA FORCE panel** on the home network, with a free monitoring-station path (CMS 1, 2 or 3; never one a monitoring company uses).
+- **For full control:** panel firmware with the JSON interface (tested with 3.0.19). PIMA's guide says it is a special firmware, not the standard one: see [Panel firmware](#panel-firmware). Older firmware works in [receive-only mode](#receive-only-mode).
+- The panel reaches the controller on the driver's **Listen Port** (7780 by default). The panel dials out; it opens no port of its own. Give the controller a fixed IP address.
+- Your **master code** (or the panel's **Smart Home code**) and the **installer code**.
 
 ## Panel firmware
 
-The JSON interface isn't in every FORCE firmware. Upgrade first for full control:
+Check whether the panel has the JSON interface: on the keypad, **press and hold 0** (system information).
+- **FW** is the firmware version.
+- A firmware with JSON names the system **HAC Force** (FORCE 32/32C, 32 zones) or **HA1 Force** (FORCE, 144 zones).
+- **IP** must be a real address, not 0.0.0.0; otherwise check the panel's Ethernet cable.
 
-1. On the keypad, enter the **master code**, then Communication → Remote Service → **Upgrade/Update** (press and hold **6** as a shortcut).
-2. Set **Firmware: Latest version**, then choose **Over Network**.
-3. Check **System Information**: it should show 1.8.x.
-4. Users & Codes now has a **Smart Home code**, and a CMS network path offers **Protocol = JSON**.
-
-If the upgrade server offers nothing, ask your installer or PIMA support for FORCE firmware with the Smart Home (JSON) interface.
+Without JSON, ask PIMA support (support-il@pima-alarms.com, 03-6506411) or your installer to upgrade the panel to the firmware with the JSON (smart-home) interface. PIMA's own guide: *FORCE JOSE configuration Guide* (Hebrew) in [PIMA's download center](https://www.pima-alarms.com/download/).
 
 ## Setup
 
-### On the panel (installer code)
+### 1. On the panel: the JSON path to the controller (installer code)
 
-System Programming → CMS & Communication → Monitoring Stations → **CMS 2** (or 3) → Comm. Paths → **Network**:
+These are the steps of PIMA's JSON configuration guide. The menus are in Hebrew on Israeli panels; both names are given.
 
-- **IP**: the controller's IP address (give the controller a fixed address). **Port**: the driver's Listen Port, 7780. **Account ID**: any number.
-- **Protocol**: **JSON** (or the panel's normal report protocol, for receive only). **Encryption**: **off**. **Life signal**: on.
-- Event reporting: **Zone/Output Toggle = ON**.
-- User menu: **Remote Disarm = ON**, or the panel refuses disarming from Control4.
+1. **Enter the installer menu:** press and hold the **Exit** key (↶), then type the **installer code**.
+2. **Events to report:** System Programming → CMS & Communication → Monitoring Stations → **CMS 1** → Event Reporting
+   (תכנות מערכת → מוקדים ותקשורת → מוקדים → מוקד 1 → דיווח ארועים).
+   Use CMS 2 or 3 if a monitoring company already uses CMS 1. Go to the **fourth screen** and mark **Zone/Output Change** (שינוי מצב אזור/יציאה). Without it, zones opening and closing don't reach Control4.
+3. *(Optional)* **CMS name:** name the station "Smart home" (בית חכם), so that a communication trouble on the keypad says what it is about.
+4. **Account number:** … → CMS 1 → Comm. Paths → **Network (Ethernet)** → Account Number (מספר מנוי). PIMA's guide uses **9999**; any number works, because the driver learns it. Set it for every partition in use.
+5. **Address:** … → Network (Ethernet) → Network Addresses (כתובות רשת): **URL/IP 1** = the controller's IP address, **PORT 1** = **7780** (the driver's Listen Port).
+6. **Protocol:** the second screen of Network (Ethernet):
+   - **Protocol: JSON** (פרוטוקול: JSON).
+   - Mark **Disable Encryption** (בטל הצפנה): the driver reads only unencrypted messages.
+   - Turn the **life signal** (אות חיים) on.
+7. **Remote disarm:** back to CMS & Communication → **General Settings** (הגדרות כלליות) → mark **Remote Disarm** (ניטרול מרחוק). Without it the panel refuses disarming from Control4 and DirectorLink.
+8. Press Exit until the status screen.
 
-### In Composer
+The panel connects to the controller at its next report or life signal (within a few minutes), and reports **Panel programming changed** when you leave the installer menu.
+
+### 2. In Composer
 
 1. **Driver → Add or Update Driver or Agent** → `DirectorLink-PIMA-Force.c4z`. Add **DirectorLink · PIMA FORCE** to a room.
 2. Set the properties:
-   - **Account ID**: leave it empty. The driver takes the account from the panel's first report and fills it in; after that, reports with any other account are refused.
-   - **Panel User Code**: the master or Smart Home code (JSON only). It reads zones and status, and is used for programming, for arming from Navigator when **Require Code To Arm** is No, and for bypass and outputs. The installer code does not work here.
-   - **Panel IP Address**: the panel's address, so that connections from anywhere else are refused (recommended).
+   - **Account ID:** leave it empty. The driver takes the account from the panel's first message and fills it in; after that, messages with any other account are refused.
+   - **Panel User Code:** the master code or the **Smart Home code**, never the installer code. With JSON the driver needs it to read zones, names and the partitions' state. It is also used for Composer's programming, for arming from Navigator when **Require Code To Arm** is No, and for bypass and outputs.
+   - **Panel IP Address:** the panel's address, so that connections from anywhere else are refused.
    - **Partitions In Use** and **Partition N Zones** (for example `1-8,12`, or `all`).
-3. Watch **Connection Status**: it ends at `Connected to <the panel's address>`, or `Receive only (SIA DC-09): ...`. Zones and their names load by themselves.
+   - **Link Timeout (s):** longer than the panel's life signal interval (300 by default).
+3. Watch **Connection Status**:
+   - **With JSON** it ends at `Connected to <the panel's address>`, and **Panel Info** reads `panel <address>, account <n>, <zones> zones, exit time <s> s`. Zones and their names load by themselves.
+   - `Receive only (SIA DC-09): ...` means the path is not on JSON yet.
+   - `Connected - set 'Panel User Code'` means the code is missing.
 
 The Documentation tab in Composer covers every property, the behaviour and troubleshooting.
 
+### 3. In DirectorLink (optional)
+
+1. In DirectorLink's Composer properties, set **Alarm Status** to **On**: the app shows each partition's state on Home, and the home's TV screens tell when the alarm goes off.
+2. To arm and disarm from the app (DirectorLink 1.15.0 and later), set **Alarm Control** to **On**. Admins can then arm and disarm; for a member, turn on **Arms and disarms the alarm** in the app's Settings → Users.
+3. In the app, Home's alarm card shows **Arm** (Away, Home, Night, Shabbat) and **Disarm**. Each asks for your alarm code, which goes to the panel as typed and is checked there.
+
+If the card says the alarm can't be armed or disarmed from DirectorLink right now, the panel isn't on JSON (receive only) or isn't connected. Composer shows it in the driver's variable `DIRECTORLINK_ALARM_CONTROL`, which is `1` when arming can work.
+
+## Shabbat
+
+PIMA sells the FORCE in Israel as a "Shabbat and holiday system", approved by the Zomet Institute. On such a panel a long press on **1** arms the **Shabbat** mode, which the installer sets up: only some zones are armed (for example the entrance), so that the family lives in the house as usual. PIMA's guide does not describe the mode further.
+
+- **Arming for Shabbat:** the driver offers **Shabbat** next to Away, Home and Night, in Navigator and in DirectorLink. It is PIMA's own Shabbat arming. A panel that is not a Shabbat system refuses it (Last Panel Error).
+- **Zones kept from Control4:** while a partition is armed for Shabbat, its zones opening and closing are not passed to Control4: not the contact connections, not the panel's or the partition's zone lists. People moving in the house cause nothing in Control4's programming. An alarm is still reported. Once the partition is no longer armed for Shabbat, every zone is reported as it is then.
+- **Before Shabbat, not during it:** the Zomet Institute's guidance allows arming before Shabbat, or by a timer set before it. Arming and disarming by hand during Shabbat are not allowed.
+
 ## Receive-only mode
 
-FORCE firmware without the JSON interface (like 1.5.1) can still report to the driver with its normal monitoring protocol, **SIA DC-09** (Contact-ID or SIA codes, encryption off). The driver detects it, acknowledges every report, and shows arming, disarming, alarms, troubles and zones opening and closing in Control4. It can't arm, disarm, bypass or read zone names. The partition's state is unknown until the panel's first arm or disarm report. When JSON firmware arrives, set the CMS path to JSON: the driver switches to full control by itself.
+FORCE firmware without the JSON interface (like 1.5.1) can still report to the driver with its normal monitoring protocol, **SIA DC-09** (Contact-ID or SIA codes, encryption off). The driver detects it, acknowledges every report, and shows arming, disarming, alarms, troubles and zones opening and closing in Control4. It can't arm, disarm, bypass or read zone names. The partition's state is unknown until the panel's first arm or disarm report. When JSON firmware arrives, set the CMS path to JSON ([Setup](#1-on-the-panel-the-json-path-to-the-controller-installer-code), step 6): the driver switches to full control by itself.
 
 ## With DirectorLink
 
-The partitions are Control4's standard ones, so DirectorLink (with its **Alarm Status** property On) shows each partition's state on Home in the DirectorLink app, and the home's TV screens tell when the alarm goes off.
-
-From **DirectorLink 1.15.0**, with its **Alarm Control** property On, admins and the members they allow can arm and disarm from the DirectorLink app. They type their alarm code each time: it goes to the panel as typed, and the panel checks it. The driver follows DirectorLink's alarm agreement:
+The partitions are Control4's standard ones, so DirectorLink shows them like any Control4 alarm ([setup](#3-in-directorlink-optional)). The driver also follows DirectorLink's alarm agreement:
 
 - `DIRECTORLINK_ALARM` = `1`, written on every start.
 - `DIRECTORLINK_ALARM_CONTROL` = `1` while arming and disarming can work (the JSON interface connected), `0` in receive-only mode or without a panel connection. DirectorLink offers Arm and Disarm only while it says `1`.

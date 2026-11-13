@@ -42,7 +42,7 @@ MAX_ZONES = 144
 ZONE_BINDING_BASE = 100
 
 -- Navigator arm buttons (driver.xml <arm_states>) -> PIMA operation types
-ARM_OPTYPES = { Away = F.OPTYPE.AWAY, Home = F.OPTYPE.HOME1, Night = F.OPTYPE.HOME2 }
+ARM_OPTYPES = { Away = F.OPTYPE.AWAY, Home = F.OPTYPE.HOME1, Night = F.OPTYPE.HOME2, Shabbat = F.OPTYPE.SHABBAT }
 
 -- Control4 security sensor type ids (SET_ZONE_INFO / PANEL_ZONE_INFO)
 ZONE_TYPES = {
@@ -443,7 +443,25 @@ function ShowMessage(p, text)
 	g.displayHold[p] = Now() + DISPLAY_HOLD_S
 end
 
+-- A partition no longer armed for Shabbat: its zones are told as they are now
+local shabbatArmed = {}
+local function ShabbatEnded()
+	for p = 1, g.partitionCount do
+		local now = F.KEY_SHABBAT[g.systemKey[p] or 0] == true
+		if shabbatArmed[p] and not now then
+			Log("INFO", "Partition %d: no longer armed for Shabbat; zones reported again", p)
+			for z = 1, g.zoneCount do
+				if ZoneInPartition(z, p) then ReportZone(z, false) end
+			end
+		elseif now and not shabbatArmed[p] then
+			Log("INFO", "Partition %d: armed for Shabbat; zone changes are kept from Control4", p)
+		end
+		shabbatArmed[p] = now
+	end
+end
+
 function RefreshPartitions(init)
+	ShabbatEnded()
 	local changed = false
 	for p = 1, g.partitionCount do
 		local state, stateType, text, total, remaining = PartitionView(p)
@@ -456,8 +474,22 @@ function RefreshPartitions(init)
 	if changed then SendAllPartitionsInfo() end
 end
 
+-- Shabbat (1.1.0): while a partition is armed for Shabbat, its zones
+-- opening and closing are kept from Control4 (contact connections, the
+-- panel's and the partition's zone lists), so that people moving in the
+-- house cause nothing there; an alarm is still reported. The driver keeps
+-- following the zones, and once the partition is no longer armed for
+-- Shabbat it tells Control4 each zone as it is then (ShabbatEnded).
+function ShabbatQuiet(z)
+	for _, p in ipairs(ZonePartitions(z)) do
+		if F.KEY_SHABBAT[g.systemKey[p] or 0] then return true end
+	end
+	return false
+end
+
 function ReportZone(z, init)
 	local r = g.reported
+	if not init and ShabbatQuiet(z) then return end
 	local open, bypassed = ZoneOpen(z), ZoneBypassed(z)
 	local openChanged = r.zoneOpen[z] ~= open
 	if openChanged or init then

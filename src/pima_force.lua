@@ -47,6 +47,9 @@ F.KEY_ARM_NAMES = {
 	[3] = "Away", [4] = "Home", [5] = "Night", [6] = "Home 3", [7] = "Home 4",
 	[8] = "Shabbat", [9] = "Shabbat",
 }
+-- Armed for Shabbat (a "Shabbat and holiday system", approved by the Zomet
+-- Institute: PIMA's FORCE user guide, Israeli edition)
+F.KEY_SHABBAT = { [8] = true, [9] = true }
 
 -- 2149 zone status bits (above the zone-number byte)
 F.ZONE_BIT = {

@@ -21,26 +21,26 @@ panel's local <b>JSON interface</b>. No cloud and no extra hardware: the panel c
 driver, the same way it connects to a monitoring station. Part of DirectorLink Drivers:
 <b>directorlink.io/drivers/pima-force</b> (help, updates and the source).</p>
 
-<p class="note"><b>Panel firmware.</b> The JSON interface is not in every FORCE firmware. Panels on older
-firmware (for example 1.5.x) must be upgraded first: <i>Master code &rarr; Communication &rarr; Remote Service
-&rarr; Upgrade/Update &rarr; Firmware: Latest version &rarr; Over Network</i>, or ask your installer / PIMA
-support for firmware with the Smart Home (JSON) interface. After the upgrade, a CMS network path offers
-<b>Protocol = JSON</b> and Users &amp; Codes shows a <b>Smart Home code</b>.</p>
+<p class="note"><b>Panel firmware.</b> The JSON interface is a special FORCE firmware (tested: 3.0.19).
+Press and hold <b>0</b> on the keypad: <b>FW</b> is the version, and a firmware with JSON names the system
+<b>HAC Force</b> (32 zones) or <b>HA1 Force</b> (144 zones). Without it, ask PIMA support (03-6506411,
+support-il@pima-alarms.com) or your installer for the JSON (smart-home) firmware, or use receive-only mode (3b).</p>
 
 <h2>1. Panel setup (installer code)</h2>
-<p><i>Installer code &rarr; System Programming &rarr; CMS &amp; Communication &rarr; Monitoring Stations &rarr;
-CMS 2 (or 3) &rarr; Comm. Paths &rarr; Network (Ethernet)</i>. Never reuse a CMS that reports to a monitoring company.</p>
+<p>As in PIMA's JSON configuration guide. Press and hold <b>Exit</b>, type the installer code, then
+<i>System Programming &rarr; CMS &amp; Communication &rarr; Monitoring Stations &rarr; CMS 1</i>
+(<i>&#1514;&#1499;&#1504;&#1493;&#1514; &#1502;&#1506;&#1512;&#1499;&#1514; &rarr; &#1502;&#1493;&#1511;&#1491;&#1497;&#1501; &#1493;&#1514;&#1511;&#1513;&#1493;&#1512;&#1514; &rarr; &#1502;&#1493;&#1511;&#1491;&#1497;&#1501; &rarr; &#1502;&#1493;&#1511;&#1491; 1</i>);
+CMS 2 or 3 if a monitoring company uses CMS 1.</p>
 <table>
-<tr><th>Setting</th><th>Value</th></tr>
-<tr><td>IP / URL 1</td><td>The Control4 controller's IP address (give the controller a fixed IP)</td></tr>
-<tr><td>Port 1</td><td>Same as the driver's <b>Listen Port</b> (default 7780)</td></tr>
-<tr><td>Account ID</td><td>Any number. The driver learns it from the first report.</td></tr>
-<tr><td>Protocol</td><td><b>JSON</b></td></tr>
-<tr><td>Encryption</td><td><b>Off</b></td></tr>
-<tr><td>Life signal</td><td>Enabled (a few minutes)</td></tr>
-<tr><td>Event reporting &rarr; Zone/Output Toggle</td><td><b>On</b> (needed for live zone open/close)</td></tr>
+<tr><th>Where</th><th>Setting</th></tr>
+<tr><td>Event Reporting, fourth screen</td><td>Mark <b>Zone/Output Change</b> (needed for live zone open/close)</td></tr>
+<tr><td>CMS name (optional)</td><td>"Smart home", so a communication trouble on the keypad says what it is about</td></tr>
+<tr><td>Comm. Paths &rarr; Network (Ethernet) &rarr; Account Number</td><td>Any number (PIMA's guide: 9999), for every partition in use. The driver learns it.</td></tr>
+<tr><td>&hellip; &rarr; Network Addresses</td><td><b>URL/IP 1</b> = the controller's IP address (give it a fixed IP); <b>PORT 1</b> = the driver's <b>Listen Port</b> (7780)</td></tr>
+<tr><td>Network (Ethernet), second screen</td><td><b>Protocol: JSON</b>; mark <b>Disable Encryption</b>; life signal on</td></tr>
+<tr><td>CMS &amp; Communication &rarr; General Settings</td><td>Mark <b>Remote Disarm</b>, otherwise the panel refuses disarming from Control4</td></tr>
 </table>
-<p>In the user menu enable <b>Remote Disarm</b>, otherwise the panel refuses disarm commands from Control4.</p>
+<p>Press Exit until the status screen. The panel connects at its next report or life signal.</p>
 
 <h2>2. Control4 setup</h2>
 <table>
@@ -68,7 +68,8 @@ and programming.</p>
 
 <h2>3. How it behaves</h2>
 <ul>
-<li><b>Arm</b> (Away = Full arm, Home = Home 1, Night = Home 2). After the panel accepts, Navigator shows the exit
+<li><b>Arm</b> (Away = Full arm, Home = Home 1, Night = Home 2, Shabbat = PIMA's Shabbat arming, on panels
+sold as a "Shabbat system"; others refuse it). After the panel accepts, Navigator shows the exit
 delay countdown, then the driver reads the panel to confirm the arm. If zones are open the panel refuses and
 Navigator offers to bypass them.</li>
 <li><b>Disarm</b> from Navigator always needs a code. The code is sent to the panel, which checks it. Programming
@@ -82,7 +83,14 @@ standard partition events (Armed, Disarmed, Alarm...).</li>
 <li>Panic / fire / medical buttons are not offered: the PIMA protocol cannot trigger them.</li>
 </ul>
 
-<h2>3a. Receive-only mode (firmware without JSON)</h2>
+<h2>3a. Shabbat</h2>
+<p>While a partition is armed for <b>Shabbat</b>, its zones opening and closing are not passed to Control4 (the
+<b>Zone N</b> contact connections and the zone lists), so that people moving in the house cause nothing in
+Control4's programming. An alarm is still reported. Once it is no longer armed for Shabbat, every zone is reported
+as it is then. Arm for Shabbat before Shabbat (or with a timer set before it), as the Zomet Institute's guidance
+allows; not by hand during it.</p>
+
+<h2>3b. Receive-only mode (firmware without JSON)</h2>
 <p>If the panel's CMS path offers no JSON protocol, leave it on its normal alarm-report protocol
 (SIA DC-09, Contact-ID or SIA codes, encryption <b>off</b>). The driver detects it, acknowledges every
 report and switches to receive-only mode. Connection Status then reads
@@ -96,7 +104,7 @@ report and switches to receive-only mode. Connection Status then reads
 <li>When JSON firmware is installed later, set the CMS path to JSON: the driver switches to full control by itself.</li>
 </ul>
 
-<h2>3b. DirectorLink</h2>
+<h2>3c. DirectorLink</h2>
 <p>The partitions are Control4's standard security partitions, so any Control4 app shows them. In
 <b>DirectorLink</b> (with its <i>Alarm Status</i> property On) the DirectorLink app shows each partition's
 state on Home. From DirectorLink 1.15.0, with its <i>Alarm Control</i> property On, people you allow can also
@@ -115,7 +123,7 @@ DirectorLink is not required: without it the driver works the same.</p>
 <tr><td>Panel connected with account X: enter it in 'Account ID'</td><td>Enter X in Account ID.</td></tr>
 <tr><td>Account mismatch</td><td>Account ID differs from the panel's CMS account.</td></tr>
 <tr><td>Panel is sending Contact-ID/SIA, not JSON</td><td>Set Protocol = JSON on the CMS path. If JSON is not offered, the panel firmware must be upgraded.</td></tr>
-<tr><td>Receive only (SIA DC-09)</td><td>Working without JSON: status and alarms only (section 3a).</td></tr>
+<tr><td>Receive only (SIA DC-09)</td><td>Working without JSON: status and alarms only (section 3b).</td></tr>
 <tr><td>Panel reports are encrypted</td><td>Turn encryption off on the CMS path.</td></tr>
 <tr><td>Unreadable data from the panel</td><td>Turn encryption off on the CMS path.</td></tr>
 <tr><td>Connected - set 'Panel User Code'</td><td>Enter the master / Smart Home code to read zones and status.</td></tr>
