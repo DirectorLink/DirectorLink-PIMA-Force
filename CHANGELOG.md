@@ -12,6 +12,7 @@ Back to the typed code, as 1.1.0: arming and disarming from DirectorLink is quic
 - `DIRECTORLINK_ALARM_KEY` is cleared and `DIRECTORLINK_ALARM_WITHOUT_CODE` is `none`, written at every start; the stored private key is deleted. A sealed command (`dl2:`) still in flight is refused and nothing is sent to the panel.
 - **DirectorLink Without Code is gone.** DirectorLink 1.16.0 arms and disarms without a code only for a driver that publishes a key, so the property could do nothing any more. Every arm and disarm from DirectorLink needs a typed code, as in 1.1.0.
 - The X25519 and base64 code (and their notice) are removed; the driver is one plain script again.
+- **No Armed flash when disarming during the exit delay.** A FORCE reads armed from the start of its exit delay, so a disarm accepted during it showed the partition Armed for a moment before the panel's status read. The partition is now disarmed as soon as the panel accepts the disarm; the status read still follows.
 - **1.2.1 was wrong about the cause:** running on standard Lua instead of LuaJIT changed nothing (14.2 s before and after). The driver stays on standard Lua, as DirectorLink runs.
 
 ## 1.2.1 (1020199) - 2026-11-13

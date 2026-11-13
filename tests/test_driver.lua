@@ -402,6 +402,22 @@ T.test("DirectorLink: a sealed command (1.2.0 and 1.2.1) or no code is refused, 
 	T.eq((partitionState()), "DISARMED_READY")
 end)
 
+T.test("disarmed during the exit delay of a panel that reads armed meanwhile: never shown Armed (1.2.2)", function()
+	M.clearProxy()
+	ReceivedFromProxy(P1, "PARTITION_ARM", { ArmType = "Away", UserCode = CODE, InterfaceID = "DirectorLink" })
+	run(1500)
+	T.truthy(M.findProxy(P1, "PARTITION_STATE", { STATE = "EXIT_DELAY", TYPE = "Away" }))
+	-- A FORCE 32C reads armed from the start of its exit delay
+	Panel.pendingArm = nil
+	Panel.keys[1] = "3"
+	OnSystemKeys(1, { "3" })
+	M.clearProxy()
+	ReceivedFromProxy(P1, "PARTITION_DISARM", { UserCode = CODE, InterfaceID = "DirectorLink" })
+	run(3000)
+	T.eq(M.findProxy(P1, "PARTITION_STATE", { STATE = "ARMED" }), nil, "no Armed between")
+	T.eq((partitionState()), "DISARMED_READY")
+end)
+
 T.test("DirectorLink arms Night and disarms with the typed code", function()
 	M.clearProxy()
 	ReceivedFromProxy(P1, "PARTITION_ARM", { ArmType = "Night", UserCode = CODE, InterfaceID = "DirectorLink" })

@@ -1246,6 +1246,13 @@ function SendDisarm(p, code, iface)
 		if ok then
 			Log("INFO", "Panel accepted disarm of partition %d", p)
 			EndExitDelay(p)
+			-- Disarmed now: a FORCE reads armed from the start of its exit delay,
+			-- so without this the partition showed Armed for a moment before the
+			-- status read (1.2.2). The status read still follows.
+			if g.systemKey[p] ~= F.KEY_DISARMED then
+				g.systemKey[p] = F.KEY_DISARMED
+				g.alarms[p] = nil
+			end
 			Debounce("statusPoll", 500, PollStatus)
 			RefreshPartitions(false)
 			return
