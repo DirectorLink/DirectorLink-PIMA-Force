@@ -67,6 +67,11 @@ WRITE_GAP_MS = 250
 OPERATION_GAP_MS = 700         -- field reports: >= 500 ms after an OPERATION
 SYNC_START_DELAY_MS = 10000    -- read status after the first null frame, or this long after connecting
 RECONNECT_GRACE_S = 120        -- after a disconnect, wait this long before reporting OFFLINE
+-- The panel's address is learned (1.2.4): a panel at a new address (after a router restart, say)
+-- is taken only while the panel is not connected and talking at its known address: heard within
+-- PANEL_QUIET_S (JSON), or its last SIA report within SIA_QUIET_S (receive only).
+PANEL_QUIET_S = 120
+SIA_QUIET_S = 600
 WATCHDOG_MS = 15000
 FAULT_POLL_S = 300
 MAX_TIMEOUTS = 3
@@ -1377,17 +1382,46 @@ function OnServerStatusChanged(nPort, strStatus)
 	Log("INFO", "Listener on port %s is %s", tostring(nPort), tostring(strStatus))
 end
 
-local function AddressAllowed(address)
+-- Whether `address` is the panel's known one (or none is known yet).
+local function KnownAddress(address)
 	return g.panelIp == "" or address == nil or address == "" or address == g.panelIp
+end
+
+-- The panel at its known address is connected and talking now (JSON), or reported lately (SIA).
+local function PanelTalking(handle)
+	local active = g.active and g.active ~= handle and g.clients[g.active]
+	if active and active.verified and Now() - g.lastRx < PANEL_QUIET_S then return true end
+	return g.mode == "sia" and g.lastSiaRx ~= nil and g.siaAddress == g.panelIp and Now() - g.lastSiaRx < SIA_QUIET_S
+end
+
+-- The address the panel calls from, learned (1.2.4): shown in the read-only Panel IP Address and
+-- kept for the next start. A change is logged as a warning, so it shows without Debug Mode.
+function LearnPanelAddress(address)
+	if not address or address == "" or address == g.panelIp then return end
+	local before = g.panelIp
+	g.panelIp = address
+	PersistData.panelIp = address
+	SetReadOnlyProperty("Panel IP Address", address)
+	if before ~= "" then
+		Log("WARN", "The panel moved from %s to %s", before, address)
+	else
+		Log("INFO", "The panel calls from %s", address)
+	end
+end
+
+-- A panel that answers with the right account from a new address: taken only while the panel at
+-- its known address is not connected and talking; else closed (a device on the network that knew
+-- the account must not take the connection, and the codes sent on it, from the panel).
+local function MayMove(handle, c)
+	if KnownAddress(c.address) or not PanelTalking(handle) then return true end
+	Log("WARN", "Refused a panel connection from %s: the panel at %s is connected", tostring(c.address), g.panelIp)
+	g.clients[handle] = nil
+	pcall(function() C4:ServerCloseClient(handle) end)
+	return false
 end
 
 function OnServerConnectionStatusChanged(nHandle, nPort, strStatus, strAddress)
 	if strStatus == "ONLINE" then
-		if not AddressAllowed(strAddress) then
-			Log("WARN", "Rejected connection from %s (Panel IP Address is %s)", tostring(strAddress), g.panelIp)
-			pcall(function() C4:ServerCloseClient(nHandle) end)
-			return
-		end
 		g.clients[nHandle] = { address = strAddress, buf = "", verified = false }
 		Log("INFO", "Connection from %s", tostring(strAddress or "?"))
 		if not g.active then SetConnStatus("Panel connected from " .. tostring(strAddress or "?") .. ", waiting for data") end
@@ -1450,10 +1484,6 @@ local FOREIGN_MESSAGES = {
 function OnServerDataIn(nHandle, strData, strAddress)
 	local c = g.clients[nHandle]
 	if not c then
-		if not AddressAllowed(strAddress) then
-			pcall(function() C4:ServerCloseClient(nHandle) end)
-			return
-		end
 		c = { address = strAddress, buf = "", verified = false }
 		g.clients[nHandle] = c
 	end
@@ -1513,7 +1543,9 @@ function HandleFrame(handle, c, f)
 			SetConnStatus(string.format("Account mismatch: panel sent %s, 'Account ID' is %d", tostring(f.account), g.account))
 			return
 		end
+		if not MayMove(handle, c) then return end
 		ActivateClient(handle)
+		LearnPanelAddress(c.address)
 		-- the ACK above went out directly: keep the next write apart from it
 		if acked then StartGap(ACK_GAP_MS) end
 	end
@@ -1639,6 +1671,8 @@ function HandleSiaMessage(handle, c, m)
 	if NormalizeAccount(m.acct) ~= NormalizeAccount(g.accountText) then
 		return SetConnStatus(string.format("Account mismatch: panel sent %s, 'Account ID' is %s", NormalizeAccount(m.acct), g.accountText))
 	end
+	if not MayMove(handle, c) then return end
+	LearnPanelAddress(c.address)
 	-- ACK first: the panel repeats a report until it is acknowledged
 	local ack = F.siaAck(m, m.timestamp and os.date("!%H:%M:%S,%m-%d-%Y") or nil)
 	Log("TRACE", "SIA >>> %s", Printable(ack))
@@ -1907,8 +1941,16 @@ PROPERTY_HANDLERS["Account ID"] = function(value)
 	UpdatePanelInfo()
 end
 
+-- Read-only since 1.2.4: the driver learns it. Up to 1.2.3 an installer typed it: that value is
+-- the known address until the panel calls from another (an empty one: the first panel to answer).
 PROPERTY_HANDLERS["Panel IP Address"] = function(value)
-	g.panelIp = Trim(value)
+	if PersistData.panelIp == nil then
+		g.panelIp = Trim(value)
+		PersistData.panelIp = g.panelIp
+	else
+		g.panelIp = PersistData.panelIp
+	end
+	SetReadOnlyProperty("Panel IP Address", g.panelIp)
 end
 
 PROPERTY_HANDLERS["Panel User Code"] = function(value)

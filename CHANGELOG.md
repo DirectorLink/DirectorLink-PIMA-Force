@@ -4,6 +4,10 @@ All notable changes to DirectorLink · PIMA FORCE for Control4. Versions follow 
 
 DirectorLink is an independent project, not affiliated with Control4, Snap One or PIMA.
 
+## 1.2.4 (1020499) - 2026-11-19
+
+- **The panel's address is learned, not typed.** On the owner's controller the router gave the panel a new address after a restart (192.168.1.129 to 192.168.1.101, 2026-11-18 09:28), and the driver, whose Panel IP Address still said the old one, refused the panel for 21 hours (2,488 times): nothing could be armed. **Panel IP Address** is now read-only and shows the address the panel calls from. A panel with the right account at a new address is taken while the panel is not connected and talking at its known address (heard within 2 minutes; for receive-only SIA, a report within 10 minutes), and the move is logged as a warning ("The panel moved from … to …"). While the panel is connected and talking, another address is refused even with its account, so a device on the network that knew the account cannot take the connection, and the codes sent on it, from the panel. An address an installer typed up to 1.2.3 is the known one until the panel calls from another.
+
 ## 1.2.3 (1020399) - 2026-11-13
 
 - **No Armed flash when disarming during the exit delay.** A FORCE reads armed from the start of its exit delay, so a disarm accepted during it showed the partition Armed for a moment before the panel's status read. The partition is now disarmed as soon as the panel accepts the disarm; the status read still follows.

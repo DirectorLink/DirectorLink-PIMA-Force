@@ -253,7 +253,7 @@
 				<name>Panel IP Address</name>
 				<type>STRING</type>
 				<default></default>
-				<readonly>false</readonly>
+				<readonly>true</readonly>
 			</property>
 			<property>
 				<name>Panel User Code</name>

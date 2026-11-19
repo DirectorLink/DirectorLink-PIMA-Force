@@ -80,7 +80,7 @@ The panel connects to the controller at its next report or life signal (within a
 2. Set the properties:
    - **Account ID:** leave it empty. The driver takes the account from the panel's first message and fills it in; after that, messages with any other account are refused.
    - **Panel User Code:** the master code or the **Smart Home code**, never the installer code. With JSON the driver needs it to read zones, names and the partitions' state. It is also used for Composer's programming, for arming from Navigator when **Require Code To Arm** is No, and for bypass and outputs.
-   - **Panel IP Address:** the panel's address, so that connections from anywhere else are refused.
+   - **Panel IP Address** (read-only since 1.2.4) shows the address the panel calls from, which the driver learns. If the router gives the panel a new address (after a power cut, say), the driver follows it once the panel calls from there, and logs the move; while the panel is connected and talking, a connection from any other address is refused, even with the panel's account. A DHCP reservation for the panel in the router keeps its address from changing at all.
    - **Partitions In Use** and **Partition N Zones** (for example `1-8,12`, or `all`).
    - **Link Timeout (s):** longer than the panel's life signal interval (300 by default).
 3. Watch **Connection Status**:
@@ -137,7 +137,7 @@ From the earlier `PimaForce.c4z` test builds: see the [change log](CHANGELOG.md)
 python tools/force_sim.py --host <controller IP> --port 7780 --account 654321 --code 1234
 ```
 
-Set **Panel User Code** to `1234` and leave **Account ID** and **Panel IP Address** empty. Arm and disarm from Navigator, and type `open 3`, `alarm 3`, `fault ac`, `siren on`, `arm away`, `disarm` or `drop` in the simulator.
+Set **Panel User Code** to `1234` and leave **Account ID** empty. Arm and disarm from Navigator, and type `open 3`, `alarm 3`, `fault ac`, `siren on`, `arm away`, `disarm` or `drop` in the simulator.
 
 **A real panel, from a PC.** Point a CMS network path at the PC's IP (port 7780) and run:
 

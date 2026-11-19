@@ -197,10 +197,23 @@ T.test("DirectorLink's alarm agreement: its variables, no control before the pan
 	T.truthy(DRIVER_SEMVER ~= "", "a version")
 end)
 
-T.test("rejects a connection from another IP when Panel IP Address is set", function()
-	M.setProperty("Panel IP Address", "192.168.1.129")
+T.test("a connection from any address is let in: the account decides (1.2.4)", function()
+	local before = #M.closed
 	OnServerConnectionStatusChanged(99, 7780, "ONLINE", "192.168.1.50")
-	T.eq(M.closed[#M.closed], 99)
+	T.eq(#M.closed, before, "not closed")
+	OnServerConnectionStatusChanged(99, 7780, "OFFLINE", "192.168.1.50")
+end)
+
+T.test("an installer's Panel IP Address (up to 1.2.3) is the known address until the panel calls from another", function()
+	local saved, savedIp = PersistData.panelIp, g.panelIp
+	PersistData.panelIp = nil
+	PROPERTY_HANDLERS["Panel IP Address"]("192.168.1.55")
+	T.eq(g.panelIp, "192.168.1.55")
+	T.eq(PersistData.panelIp, "192.168.1.55")
+	PROPERTY_HANDLERS["Panel IP Address"]("10.0.0.1")
+	T.eq(g.panelIp, "192.168.1.55", "read-only: Composer cannot change it")
+	PersistData.panelIp, g.panelIp = saved, savedIp
+	PROPERTY_HANDLERS["Panel IP Address"]("")
 end)
 
 T.test("ignores a panel with the wrong account but keeps it talking", function()
@@ -551,6 +564,42 @@ T.test("panel reconnects: communication restored and state resynced", function()
 	T.truthy(M.findProxy(5001, "TROUBLE_CLEAR", { IDENTIFIER = "9999" }))
 	T.eq((partitionState()), "DISARMED_READY")
 	T.eq(M.vars.DIRECTORLINK_ALARM_CONTROL, "1")
+end)
+
+T.test("the panel's address is learned and shown read-only (1.2.4)", function()
+	T.eq(Properties["Panel IP Address"], "192.168.1.129")
+	T.eq(PersistData.panelIp, "192.168.1.129")
+end)
+
+T.test("while the panel talks, another address with its account is refused (1.2.4)", function()
+	OnServerConnectionStatusChanged(60, 7780, "ONLINE", "192.168.1.77")
+	OnServerDataIn(60, F.encode({ frame_type = "null", counter = 1, account = ACCOUNT }) .. string.rep("\0", 180), "192.168.1.77", 1)
+	T.eq(M.closed[#M.closed], 60, "closed")
+	T.eq(g.active, Panel.handle, "the panel keeps its connection")
+	T.eq(Properties["Panel IP Address"], "192.168.1.129")
+	T.truthy(M.allOutput():find("Refused a panel connection from 192.168.1.77", 1, true), "logged")
+end)
+
+T.test("a panel that comes back at a new address is taken, and the move is logged (1.2.4)", function()
+	OnServerConnectionStatusChanged(Panel.handle, 7780, "OFFLINE", Panel.address)
+	local oldHandle, oldAddress = Panel.handle, Panel.address
+	Panel.handle, Panel.address = 21, "192.168.1.101"
+	Panel.connect()
+	Panel.null()
+	run(15000)
+	T.eq(g.active, 21)
+	T.eq(Properties["Panel IP Address"], "192.168.1.101")
+	T.eq(PersistData.panelIp, "192.168.1.101")
+	T.truthy(M.allOutput():find("The panel moved from 192.168.1.129 to 192.168.1.101", 1, true), "logged")
+	T.eq(M.vars.DIRECTORLINK_ALARM_CONTROL, "1", "arming works")
+	-- Back to its first address, for the tests that follow.
+	OnServerConnectionStatusChanged(Panel.handle, 7780, "OFFLINE", Panel.address)
+	Panel.handle, Panel.address = oldHandle, oldAddress
+	Panel.connect()
+	Panel.null()
+	run(15000)
+	T.eq(Properties["Panel IP Address"], "192.168.1.129")
+	T.eq(g.active, Panel.handle)
 end)
 
 T.test("SIA DC-09 report next to a JSON connection: ACKed, JSON keeps control", function()

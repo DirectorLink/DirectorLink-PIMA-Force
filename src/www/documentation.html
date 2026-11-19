@@ -46,7 +46,7 @@ CMS 2 or 3 if a monitoring company uses CMS 1.</p>
 <tr><th>Property</th><th>Purpose</th></tr>
 <tr><td>Listen Port</td><td>TCP port the driver listens on for the panel (default 7780).</td></tr>
 <tr><td>Account ID</td><td>Leave empty: the driver takes the account from the panel's first report and fills it in. After that, any other account is refused. Edit or clear it to switch to a different panel.</td></tr>
-<tr><td>Panel IP Address</td><td>Optional. When set, connections from any other address are refused.</td></tr>
+<tr><td>Panel IP Address</td><td>Read-only (1.2.4): the address the panel calls from, learned by the driver. If the panel calls from a new address (the router gave it another), the driver follows it while the panel is not connected at its known address, and logs the move; while it is connected and talking, any other address is refused. A DHCP reservation for the panel keeps its address fixed.</td></tr>
 <tr><td>Panel User Code</td><td>Master or Smart Home code. Used to read zones and status, for programming
 (arm/disarm from Composer), for arming from Navigator when no code is required, and for bypass. The installer
 code does not work here.</td></tr>
